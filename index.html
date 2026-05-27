@@ -45,9 +45,9 @@
         import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-auth.js";
         import { getDatabase, ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
 
-        // 새로 생성하신 미국 서버 프로젝트 설정값입니다.
+        // 🚨 중요: 이 안의 설정값(특히 apiKey)이 파이어베이스 콘솔 화면의 값과 완벽히 일치하는지 꼭 대조해 보세요!
         const firebaseConfig = {
-            apiKey: "AIzaSyA1i58GpoqiBIckXPHNlPyfLF_ZkNlgtY0",
+            apiKey: "AIzaSyB1i58GpoqiBIckXPHNlPyfLF_ZkNlgtY0",
             authDomain: "animalarkive-43b9a.firebaseapp.com",
             databaseURL: "https://animalarkive-43b9a-default-rtdb.firebaseio.com",
             projectId: "animalarkive-43b9a",
