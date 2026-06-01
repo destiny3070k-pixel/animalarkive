@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Private Database</title>
+  <title>Animal Arkive</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body { 
@@ -14,6 +14,7 @@
       margin: 0;
     }
     
+    /* 상단 내비게이션 바 */
     .navbar { 
       background-color: #2c3e50; 
       border-bottom: 3px solid #3498db; 
@@ -25,7 +26,7 @@
       cursor: pointer; 
     }
     
-    /* [로그인 전] 화면 중앙 카드 레이아웃 */
+    /* 인증 통합 컨테이너 */
     .auth-outer-container {
       min-height: calc(100vh - 40px);
       display: flex;
@@ -70,6 +71,10 @@
       border: 1px solid #ced4da;
       padding-left: 16px;
     }
+    .auth-box .form-control:focus {
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
     .auth-notice {
       margin-top: 24px;
       padding: 15px;
@@ -80,7 +85,7 @@
       line-height: 1.6;
     }
 
-    /* [로그인 후] 위키 본체 레이아웃 */
+    /* 위키 레이아웃 */
     .wiki-container { 
       background-color: #ffffff;
       border: 1px solid #dee2e6;
@@ -128,7 +133,7 @@
       border-radius: 8px;
     }
 
-    /* 위키 문법 컴포넌트 */
+    /* 위키 스펙 전용 문법 요소 */
     .toc-container { 
       background: #f9f9f9; 
       border: 1px solid #aaa; 
@@ -177,11 +182,12 @@
 <body onclick="hideTooltip()">
   <div id="fnTooltip" class="footnote-tooltip"></div>
 
+  <!-- ================= 상단 네비게이션 바 (로그인 완료 후) ================= -->
   <nav id="wikiNav" class="navbar navbar-expand-lg navbar-dark sticky-top hidden">
     <div class="container">
-      <a class="navbar-brand" onclick="loadPage('메인페이지')">📔 My Database</a>
+      <a class="navbar-brand" onclick="loadPage('메인페이지')">🦁 Animal Arkive 🐯</a>
       <div class="ms-auto d-flex align-items-center">
-        <span id="navNickname" class="text-light me-3 fw-bold" style="font-size: 14px;"></span>
+        <span id="userBadge" class="text-light me-3 d-none d-md-inline" style="font-size: 14px; font-weight: 500;"></span>
         <input id="searchInput" class="form-control me-2" type="search" placeholder="제목 검색..." style="max-width: 200px; height: 38px;">
         <button class="btn btn-outline-light me-2" style="height: 38px; min-width: 60px;" onclick="searchWiki()">검색</button>
         <button class="btn btn-primary me-3" style="height: 38px;" onclick="createNewWiki()">새 문서</button>
@@ -190,48 +196,49 @@
     </div>
   </nav>
 
+  <!-- ================= 로그인 / 회원가입 / 닉네임 설정 섹션 ================= -->
   <div id="authSection" class="auth-outer-container">
     <div class="auth-container">
       <div class="auth-header-title">🦁 Animal Arkive 🐯</div>
       <div class="auth-subtitle">Firebase Authentication + Realtime Database 덕질 아카이브</div>
       
-      <div class="auth-box">
+      <!-- 기본 로그인 폼 입력부 -->
+      <div id="credentialsForm" class="auth-box">
         <h3>로그인 / 회원가입</h3>
         <input id="emailInput" class="form-control" type="email" placeholder="이메일" />
         <input id="passwordInput" class="form-control" type="password" placeholder="비밀번호 6자리 이상" />
         <button class="btn btn-primary w-100 mt-2" id="loginBtn" style="height: 46px; font-weight: bold;">로그인</button>
-        <button class="btn btn-outline-secondary w-100" id="signupBtn" style="height: 46px; font-weight: bold; color: #7e57c2; border-color: #7e57c2;">회원가입</button>
+        <button class="btn btn-outline-secondary w-100" id="signupBtn" style="height: 46px; color: #7e57c2; border-color: #7e57c2; font-weight: bold;">회원가입</button>
+        <div class="auth-notice">
+          처음 사용하는 이메일은 회원가입을 먼저 누르세요.<br />
+          이미 가입한 이메일은 로그인 버튼을 누르면 됩니다.
+        </div>
       </div>
-      
-      <div class="auth-notice">
-        처음 사용하는 이메일은 회원가입을 먼저 누르세요.<br />
-        이미 가입한 이메일은 로그인 버튼을 누르면 됩니다.
+
+      <!-- [최초 가입자 전용] 닉네임 설정 폼 입력부 -->
+      <div id="nicknameForm" class="auth-box hidden">
+        <h3>닉네임 설정</h3>
+        <p class="text-muted small">Animal Arkive 위키에서 서술자(작성자) 이름으로 활용될 닉네임을 등록해 주세요.</p>
+        <input id="nicknameInput" class="form-control" type="text" placeholder="닉네임 입력 (2자 이상)" />
+        <button class="btn btn-success w-100 mt-2" id="saveNicknameBtn" style="height: 46px; font-weight: bold;">등록 후 아카이브 시작하기</button>
       </div>
     </div>
   </div>
 
-  <div id="nicknameSection" class="auth-outer-container hidden">
-    <div class="auth-container">
-      <div class="auth-header-title">프로필 설정</div>
-      <div class="auth-subtitle">아카이브 내부에서 사용할 고유 닉네임을 등록해주세요.</div>
-      
-      <div class="auth-box">
-        <input id="nicknameInput" class="form-control" type="text" placeholder="사용할 닉네임 입력" maxlength="15" />
-        <button class="btn btn-success w-100 mt-2" id="saveNicknameBtn" style="height: 46px; font-weight: bold;">설정 완료 및 시작하기</button>
-      </div>
-    </div>
-  </div>
-
+  <!-- ================= 메인 위키 레이아웃 대시보드 ================= -->
   <div id="mainSection" class="container wiki-container hidden">
+    <!-- 읽기 모드 뷰어 -->
     <div id="viewMode">
       <h1 id="displayTitle" class="wiki-title">로딩 중...</h1>
       <div id="displayContent" class="wiki-content"></div>
       
+      <!-- 주석 트리거 -->
       <div id="footnoteSection" class="footnote-list" style="display:none;">
         <h6 class="fw-bold">[주석]</h6>
         <ol id="footnoteItems"></ol>
       </div>
       
+      <!-- 하단 메타 데이터 인포바 -->
       <div class="mt-5 pt-3 border-top d-flex justify-content-between align-items-center">
         <small id="metaInfo" class="text-muted"></small>
         <div>
@@ -241,6 +248,7 @@
       </div>
     </div>
 
+    <!-- 문서 편집 폼 -->
     <div id="editMode" class="hidden">
       <h1 class="wiki-title">편집: <span id="editTitleLabel"></span></h1>
       <textarea id="editorTextarea" class="form-control mb-3" rows="22" style="font-family: monospace; font-size: 14px;"></textarea>
@@ -251,6 +259,7 @@
     </div>
   </div>
 
+  <!-- 파이어베이스 SDK 연동 핵심 로직 스크립트 -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import {
@@ -258,8 +267,8 @@
       createUserWithEmailAndPassword,
       signInWithEmailAndPassword,
       signOut,
-      onAuthStateChanged,
-      updateProfile
+      updateProfile,
+      onAuthStateChanged
     } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
     import {
       getDatabase,
@@ -284,28 +293,28 @@
     const auth = getAuth(app);
     const database = getDatabase(app);
 
-    // DOM 포인터 상용 정의
+    // 인터페이스 포인터 제어 노드
     const authSection = document.getElementById('authSection');
-    const nicknameSection = document.getElementById('nicknameSection');
+    const credentialsForm = document.getElementById('credentialsForm');
+    const nicknameForm = document.getElementById('nicknameForm');
     const mainSection = document.getElementById('mainSection');
     const wikiNav = document.getElementById('wikiNav');
-    const navNickname = document.getElementById('navNickname');
+    const userBadge = document.getElementById('userBadge');
 
     const emailInput = document.getElementById('emailInput');
     const passwordInput = document.getElementById('passwordInput');
     const nicknameInput = document.getElementById('nicknameInput');
-    
     const loginBtn = document.getElementById('loginBtn');
     const signupBtn = document.getElementById('signupBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
     const saveNicknameBtn = document.getElementById('saveNicknameBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
     const searchInput = document.getElementById('searchInput');
 
     let currentUser = null;
     let currentDoc = { title: '', content: '' };
     let footnotes = [];
 
-    // 글로벌 핸들러 링킹
+    // 전역 스코프 바인딩 처리
     window.loadPage = loadPage;
     window.searchWiki = searchWiki;
     window.createNewWiki = createNewWiki;
@@ -319,27 +328,54 @@
       const email = emailInput.value.trim();
       const password = passwordInput.value.trim();
       if (!email || !password) {
-        alert('이메일과 비밀번호를 모두 입력해주세요.');
+        alert('이메일과 비밀번호를 입력해주세요.');
         return null;
       }
       if (password.length < 6) {
-        alert('비밀번호는 6자리 이상이어야 합니다.');
+        alert('비밀번호는 최소 6자리 이상 입력해야 합니다.');
         return null;
       }
       return { email, password };
     }
 
-    // 회원가입 프로세스
+    // 회원가입 단추 액션
     signupBtn.addEventListener('click', async () => {
       const creds = getCredentials();
       if (!creds) return;
       try {
         await createUserWithEmailAndPassword(auth, creds.email, creds.password);
-        // 가입 완료 시 세션감지 핸들러로 넘어가며 닉네임 설정창 분기가 켜집니다.
+        // 가입 직후 순목록 폼을 내리고 닉네임 기입 컴포넌트 활성화 조치
+        credentialsForm.classList.add('hidden');
+        nicknameForm.classList.remove('hidden');
       } catch (err) { alert(getKoreanError(err.code)); }
     });
 
-    // 로그인 프로세스
+    // 닉네임 영구 저장 단추 액션
+    saveNicknameBtn.addEventListener('click', async () => {
+      const nick = nicknameInput.value.trim();
+      if (!nick || nick.length < 2) {
+        alert('닉네임은 최소 2글자 이상으로 설정해 주세요.');
+        return;
+      }
+      if (auth.currentUser) {
+        try {
+          // 사용자 프로필 객체 동기화 연동
+          await updateProfile(auth.currentUser, { displayName: nick });
+          alert(`${nick}님, Animal Arkive에 오신 것을 환영합니다!`);
+          
+          // 화면 전환 제어 처리
+          authSection.classList.add('hidden');
+          wikiNav.classList.remove('hidden');
+          mainSection.classList.remove('hidden');
+          userBadge.textContent = `👤 ${nick}님`;
+          loadPage('메인페이지');
+        } catch (err) {
+          alert('닉네임 설정 중 오류가 발생했습니다.');
+        }
+      }
+    });
+
+    // 일반 로그인 처리 단추 액션
     loginBtn.addEventListener('click', async () => {
       const creds = getCredentials();
       if (!creds) return;
@@ -348,56 +384,36 @@
       } catch (err) { alert(getKoreanError(err.code)); }
     });
 
-    // 로그아웃
     logoutBtn.addEventListener('click', () => signOut(auth));
 
-    // 닉네임 설정 프로세스
-    saveNicknameBtn.addEventListener('click', async () => {
-      const nick = nicknameInput.value.trim();
-      if (!nick) {
-        alert('사용할 닉네임을 입력해주세요.');
-        return;
-      }
-      try {
-        await updateProfile(auth.currentUser, { displayName: nick });
-        alert(`반갑습니다, ${nick}님! 데이터베이스 계정 셋업이 완료되었습니다.`);
-        
-        // 화면 전환 처리
-        nicknameSection.classList.add('hidden');
-        wikiNav.classList.remove('hidden');
-        mainSection.classList.remove('hidden');
-        navNickname.textContent = `👤 ${nick}님`;
-        loadPage('메인페이지');
-      } catch (err) {
-        alert('닉네임 설정 도중 오류가 발생했습니다.');
-      }
-    });
-
-    // Auth 세션 실시간 트래킹 모니터링
+    // 실시간 세션 라이프사이클 홀더 감시자
     onAuthStateChanged(auth, (user) => {
       if (user) {
         currentUser = user;
-        authSection.classList.add('hidden');
         
-        // 핵심 분기: 가입 후 닉네임(displayName)이 아직 없는 신규 유저인 경우
+        // 중요 분기: 가입 절차 중 닉네임을 설정하기 전인 유저는 메인 위키로 패스시키지 않고 닉네임 입력 대기
         if (!user.displayName) {
+          authSection.classList.remove('hidden');
+          credentialsForm.classList.add('hidden');
+          nicknameForm.classList.remove('hidden');
           wikiNav.classList.add('hidden');
           mainSection.classList.add('hidden');
-          nicknameSection.classList.remove('hidden');
-        } else {
-          // 기존에 닉네임 설정이 이미 완료되어 존재하는 유저인 경우
-          nicknameSection.classList.add('hidden');
-          wikiNav.classList.remove('hidden');
-          mainSection.classList.remove('hidden');
-          navNickname.textContent = `👤 ${user.displayName}님`;
-          
-          searchInput.onkeypress = (e) => { if (e.keyCode === 13) searchWiki(); };
-          loadPage('메인페이지');
+          return;
         }
+
+        // 정상적으로 닉네임 프로필 정보가 바인딩 완료된 유저 프리패스
+        authSection.classList.add('hidden');
+        wikiNav.classList.remove('hidden');
+        mainSection.classList.remove('hidden');
+        userBadge.textContent = `👤 ${user.displayName}님`;
+        
+        searchInput.onkeypress = (e) => { if (e.keyCode === 13) searchWiki(); };
+        loadPage('메인페이지');
       } else {
         currentUser = null;
         authSection.classList.remove('hidden');
-        nicknameSection.classList.add('hidden');
+        credentialsForm.classList.remove('hidden');
+        nicknameForm.classList.add('hidden');
         wikiNav.classList.add('hidden');
         mainSection.classList.add('hidden');
         emailInput.value = '';
@@ -406,14 +422,14 @@
       }
     });
 
-    // 위키 비즈니스 코어 엔진 구현
+    // 위키 비즈니스 데이터 로더
     async function loadPage(title) {
       if (!currentUser || !title) return;
       
       document.getElementById('editMode').classList.add('hidden');
       document.getElementById('viewMode').classList.remove('hidden');
       document.getElementById('footnoteSection').style.display = 'none';
-      document.getElementById('displayTitle').innerText = "불러오는 중...";
+      document.getElementById('displayTitle').innerText = "데이터 호출 중...";
 
       if (title === '메인페이지') {
         try {
@@ -431,12 +447,13 @@
             listHtml = recent.map(d => {
               const safeTitle = d.title.replace(/'/g, "\\'");
               const shortDate = d.updatedAt ? d.updatedAt.substring(5, 16) : ''; 
-              const writer = d.author ? ` (${escapeHTML(d.author)})` : ' (이름 없음)';
-              return `<li><a onclick="loadPage('${safeTitle}')">${escapeHTML(d.title)}</a> <small class="text-muted ms-2">${shortDate}${writer}</small></li>`;
+              // 리스트에 작성자 닉네임 나란히 노출 처리 연동
+              const authorLabel = d.author ? `<small class="text-secondary ms-2">by ${escapeHTML(d.author)}</small>` : '';
+              return `<li><a onclick="loadPage('${safeTitle}')">${escapeHTML(d.title)}</a> ${authorLabel} <small class="text-muted ms-2">${shortDate}</small></li>`;
             }).join('');
           }
 
-          document.getElementById('displayTitle').innerText = "🏠 My Knowledge Database";
+          document.getElementById('displayTitle').innerText = "🏠 Animal Arkive";
           document.getElementById('displayContent').innerHTML = `
             <div class="row mt-4">
               <div class="col-md-7">
@@ -444,7 +461,7 @@
                 <ul class="recent-list">${listHtml || '<li class="text-muted">기록이 없습니다.</li>'}</ul>
               </div>
               <div class="col-md-5">
-                <div class="card grammar-panel p-3 shadow-sm">
+                <div class="card grammar-panel card p-3 shadow-sm">
                   <h6 class="fw-bold text-dark"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>문법 안내</h6>
                   <div class="card-body p-0 mt-2" style="font-size: 0.88rem; line-height: 1.75; color: #555;">
                     볼드: <code>'''글자'''</code> / 취소선: <code>~~글자~~</code><br>
@@ -478,7 +495,8 @@
           document.getElementById('displayTitle').innerText = data.title;
           document.getElementById('displayContent').innerHTML = parsed.html;
           
-          const displayAuthor = data.author ? ` (작성자: ${data.author})` : ' (작성자: 이름 없음)';
+          // 하단 메타정보 영역에 작성자(author) 닉네임 맵 데이터 출력 바인딩
+          const displayAuthor = data.author ? ` | 작성자: ${data.author}` : '';
           document.getElementById('metaInfo').innerText = `최종 수정: ${data.updatedAt || '-'}${displayAuthor}`;
           
           if (parsed.fns.length > 0) {
@@ -493,12 +511,10 @@
           document.getElementById('metaInfo').innerText = '';
         }
       } catch (err) {
-        console.error(err);
-        document.getElementById('displayContent').innerText = "데이터 통신 장애로 문서를 불러오지 못했습니다.";
+        document.getElementById('displayContent').innerText = "데이터 통신 실시간 동기화 장애 발생.";
       }
     }
 
-    // 마크업 원본 렌더링 파서
     function parseWiki(text) {
       if (!text) return { html: "", fns: [] };
       let res = escapeHTML(text);
@@ -556,7 +572,7 @@
 
     function cancelEdit() { loadPage(currentDoc.title); }
 
-    // 문서 저장 (Upsert) - 작성자 닉네임 동시 바인딩 처리
+    // 문서 수정 업서트 트랜잭션 규칙
     async function submitWiki() {
       if (!currentUser) return;
       const saveBtn = document.getElementById('saveBtn');
@@ -575,20 +591,18 @@
 
       try {
         const docRef = ref(database, `users/${currentUser.uid}/wiki/${safeKey}`);
-        
-        // 데이터 적재 시 displayName(닉네임) 속성 확장 반영
+        // 데이터 구조 스키마 바인딩 확장 -> 현재 유저의 프로필 닉네임(displayName) 같이 영구 동적 저장 추가
         await set(docRef, { 
           title: title, 
           content: newContent, 
           updatedAt: formattedDate,
-          author: currentUser.displayName || '이름 없음'
+          author: currentUser.displayName || "익명 아카이버"
         });
-        
         currentDoc.content = newContent;
         saveBtn.disabled = false;
         loadPage(title);
       } catch (err) {
-        alert('저장에 실패했습니다.');
+        alert('저장 처리가 실패했습니다.');
         saveBtn.disabled = false;
       }
     }
@@ -612,7 +626,7 @@
     function createNewWiki() {
       const t = prompt("새 제목:");
       if (t && t.trim()) {
-        if(t.trim() === '메인페이지') { alert('예약된 핵심 키워드는 제목으로 선점할 수 없습니다.'); return; }
+        if(t.trim() === '메인페이지') { alert('예약어명은 주 타이틀명으로 사용할 수 없습니다.'); return; }
         loadPage(t.trim());
       }
     }
@@ -624,9 +638,9 @@
     function getKoreanError(code) {
       switch (code) {
         case 'auth/invalid-credential': return '이메일 주소 또는 비밀번호가 올바르지 않습니다.';
-        case 'auth/email-already-in-use': return '이미 개설되어 사용 중인 계정 메일 주소입니다.';
+        case 'auth/email-already-in-use': return '이미 가입되어 사용 중인 계정 메일 주소입니다.';
         case 'auth/weak-password': return '최소 6자 이상의 비밀번호가 요구됩니다.';
-        default: return `인증 실패 예외 발생: ${code}`;
+        default: return `인증 오류가 발생했습니다: ${code}`;
       }
     }
   </script>
