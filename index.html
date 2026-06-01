@@ -3,19 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Animal Arkive - Wiki Database</title>
+  <title>My Private Database</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
+    /* 기본 배경 및 폰트 세팅 */
     body { 
-      background: linear-gradient(135deg, #e3f2fd, #fce4ec);
+      background-color: #f8f9fa; 
       font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; 
       color: #333; 
       min-height: 100vh;
       margin: 0;
     }
+    
+    /* 상단 내비게이션 바 (로그인 후 전용) */
     .navbar { 
       background-color: #2c3e50; 
-      border-bottom: 3px solid #42a5f5; 
+      border-bottom: 3px solid #3498db; 
+      padding: 10px 0;
     }
     .navbar-brand { 
       font-weight: bold; 
@@ -23,54 +27,83 @@
       cursor: pointer; 
     }
     
-    /* 인증 박스 전용 레이아웃 */
+    /* [로그인 전] 화면 중앙 카드 레이아웃 (image_0a4cc5.png 스타일) */
+    .auth-outer-container {
+      min-height: calc(100vh - 40px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
     .auth-container {
-      max-width: 450px;
-      margin: 80px auto;
+      width: 100%;
+      max-width: 580px;
       background: #ffffff;
       border-radius: 24px;
-      padding: 35px;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+      padding: 40px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+      border: 1px solid #eaeaea;
     }
     .auth-box {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
     }
-    .auth-box h2 {
-      font-size: 24px;
+    .auth-header-title {
+      font-size: 26px;
       font-weight: bold;
       text-align: center;
-      margin-bottom: 10px;
+      margin-bottom: 4px;
     }
-    .notice {
-      margin-top: 20px;
-      padding: 12px;
-      border-radius: 12px;
-      background: #fff8e1;
-      color: #6d4c41;
+    .auth-subtitle {
+      text-align: center;
+      color: #7f8c8d;
       font-size: 13.5px;
+      margin-bottom: 24px;
+    }
+    .auth-box h3 {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+    .auth-box .form-control {
+      height: 48px;
+      border-radius: 10px;
+      border: 1px solid #ced4da;
+      padding-left: 16px;
+    }
+    .auth-box .form-control:focus {
+      border-color: #3498db;
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
+    .auth-notice {
+      margin-top: 24px;
+      padding: 15px;
+      border-radius: 10px;
+      background: #fff9e6;
+      color: #7d5a00;
+      font-size: 13px;
       line-height: 1.6;
     }
 
-    /* 메인 위키 컨테이너 */
+    /* [로그인 후] 위키 본체 레이아웃 (image_0a48cb.png 스타일) */
     .wiki-container { 
-      background: #html; 
       background-color: #ffffff;
-      border: none;
-      padding: 40px; 
-      margin-top: 30px; 
-      margin-bottom: 40px;
-      min-height: 620px; 
-      border-radius: 20px; 
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+      border: 1px solid #dee2e6;
+      padding: 45px; 
+      margin-top: 40px; 
+      margin-bottom: 50px;
+      min-height: 650px; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04); 
       position: relative; 
     }
     .wiki-title { 
       border-bottom: 2px solid #2c3e50; 
-      padding-bottom: 12px; 
+      padding-bottom: 14px; 
       font-weight: bold; 
-      margin-bottom: 22px; 
+      margin-bottom: 24px; 
+      font-size: 32px;
     }
     .wiki-content { 
       line-height: 1.9; 
@@ -81,12 +114,13 @@
       padding-left: 0; 
     }
     .recent-list li { 
-      padding: 10px 0; 
-      border-bottom: 1px solid #edf1f5; 
+      padding: 12px 0; 
+      border-bottom: 1px solid #eee; 
+      font-size: 15px;
     }
     .recent-list li a { 
       text-decoration: none; 
-      color: #42a5f5; 
+      color: #3498db; 
       font-weight: 600; 
       cursor: pointer; 
     }
@@ -94,38 +128,38 @@
       text-decoration: underline;
     }
     
-    /* 문법 안내 카드 */
-    .grammar-card {
+    /* 문법 안내 패널 */
+    .grammar-panel {
       background-color: #f8f9fa;
-      border: 1px solid #e9ecef;
-      border-radius: 12px;
+      border: none;
+      border-radius: 8px;
     }
 
-    /* 위키 문법용 컴포넌트 */
+    /* 위키 문법 전용 데코레이션 */
     .toc-container { 
       background: #f9f9f9; 
-      border: 1px solid #ccc; 
+      border: 1px solid #aaa; 
       padding: 15px; 
       display: inline-block; 
-      margin-bottom: 20px; 
-      border-radius: 6px; 
+      margin-bottom: 22px; 
+      border-radius: 4px; 
       font-size: 0.95rem; 
     }
     .toc-title { 
       font-weight: bold; 
       text-align: center; 
-      margin-bottom: 8px; 
+      margin-bottom: 10px; 
       display: block; 
     }
     sup.footnote { 
       cursor: help; 
-      color: #42a5f5; 
+      color: #3498db; 
       font-weight: bold; 
       padding: 0 2px; 
     }
     .footnote-list { 
       margin-top: 50px; 
-      padding-top: 20px; 
+      padding-top: 25px; 
       border-top: 1px solid #eee; 
       font-size: 0.9rem; 
       color: #666; 
@@ -138,10 +172,11 @@
       padding: 8px 12px; 
       z-index: 1000; 
       max-width: 300px; 
-      border-radius: 6px; 
+      border-radius: 5px; 
       font-size: 0.85rem; 
     }
     
+    /* 유틸리티 */
     .hidden { 
       display: none !important; 
     }
@@ -152,28 +187,33 @@
 
   <nav id="wikiNav" class="navbar navbar-expand-lg navbar-dark sticky-top hidden">
     <div class="container">
-      <a class="navbar-brand" onclick="loadPage('메인페이지')">🦁 Animal Arkive 🐯</a>
+      <a class="navbar-brand" onclick="loadPage('메인페이지')">📔 My Database</a>
       <div class="ms-auto d-flex align-items-center">
-        <span id="userEmailDisplay" class="text-light me-3 d-none d-md-inline" style="font-size: 14px;"></span>
-        <input id="searchInput" class="form-control me-2 form-control-sm" type="search" placeholder="문서 검색..." style="max-width: 180px;">
-        <button class="btn btn-sm btn-outline-light me-2" onclick="searchWiki()">검색</button>
-        <button class="btn btn-sm btn-primary me-2" onclick="createNewWiki()">새 문서</button>
-        <button class="btn btn-sm btn-danger" id="logoutBtn">로그아웃</button>
+        <input id="searchInput" class="form-control me-2" type="search" placeholder="제목 검색..." style="max-width: 200px; height: 38px;">
+        <button class="btn btn-outline-light me-2" style="height: 38px; min-width: 60px;" onclick="searchWiki()">검색</button>
+        <button class="btn btn-primary me-3" style="height: 38px;" onclick="createNewWiki()">새 문서</button>
+        <button class="btn btn-sm btn-link text-light text-decoration-none" id="logoutBtn" style="font-size: 13px; opacity: 0.8;">로그아웃</button>
       </div>
     </div>
   </nav>
 
-  <div id="authSection" class="container auth-container">
-    <div class="auth-box">
-      <h2>Animal Arkive 로그인</h2>
-      <input id="emailInput" class="form-control" type="email" placeholder="이메일 주소" />
-      <input id="passwordInput" class="form-control" type="password" placeholder="비밀번호 (6자리 이상)" />
-      <button class="btn btn-primary w-100 mt-2" id="loginBtn">로그인</button>
-      <button class="btn btn-outline-secondary w-100" id="signupBtn">회원가입</button>
-    </div>
-    <div class="notice">
-      처음 사용하는 계정은 <strong>회원가입</strong>을 먼저 진행하세요.<br />
-      가입 완료 후 자동으로 아카이브 대시보드로 진입합니다.
+  <div id="authSection" class="auth-outer-container">
+    <div class="auth-container">
+      <div class="auth-header-title">🦁 Animal Arkive 🐯</div>
+      <div class="auth-subtitle">Firebase Authentication + Realtime Database 덕질 아카이브</div>
+      
+      <div class="auth-box">
+        <h3>로그인 / 회원가입</h3>
+        <input id="emailInput" class="form-control" type="email" placeholder="이메일" />
+        <input id="passwordInput" class="form-control" type="password" placeholder="비밀번호 6자리 이상" />
+        <button class="btn btn-primary w-100 mt-2" id="loginBtn" style="height: 46px; font-weight: bold;">로그인</button>
+        <button class="btn btn-outline-purple w-100" id="signupBtn" style="height: 46px; color: #7e57c2; border-color: #7e57c2; font-weight: bold;">회원가입</button>
+      </div>
+      
+      <div class="auth-notice">
+        처음 사용하는 이메일은 회원가입을 먼저 누르세요.<br />
+        이미 가입한 이메일은 로그인 버튼을 누르면 됩니다.
+      </div>
     </div>
   </div>
 
@@ -198,10 +238,10 @@
 
     <div id="editMode" class="hidden">
       <h1 class="wiki-title">편집: <span id="editTitleLabel"></span></h1>
-      <textarea id="editorTextarea" class="form-control mb-3" rows="20" placeholder="위키 문법을 사용하여 기록을 남겨보세요."></textarea>
+      <textarea id="editorTextarea" class="form-control mb-3" rows="22" style="font-family: monospace; font-size: 14px;"></textarea>
       <div class="d-flex justify-content-end">
         <button class="btn btn-outline-secondary me-2" onclick="cancelEdit()">취소</button>
-        <button id="saveBtn" class="btn btn-success" onclick="submitWiki()">저장하기</button>
+        <button id="saveBtn" class="btn btn-primary" onclick="submitWiki()">저장하기</button>
       </div>
     </div>
   </div>
@@ -223,7 +263,7 @@
       remove
     } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
-    // 미국 리전 데이터베이스 설정
+    // 미국 데이터베이스 설정 주소 바인딩
     const firebaseConfig = {
       apiKey: "AIzaSyC4iXaCgH2tDNitwtpwS4ACXYzlslYssWw",
       authDomain: "animal-arkive.firebaseapp.com",
@@ -235,16 +275,14 @@
       measurementId: "G-QL0GNMWNLX"
     };
 
-    // 초기화
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const database = getDatabase(app);
 
-    // DOM 포인터
+    // DOM 노드
     const authSection = document.getElementById('authSection');
     const mainSection = document.getElementById('mainSection');
     const wikiNav = document.getElementById('wikiNav');
-    const userEmailDisplay = document.getElementById('userEmailDisplay');
 
     const emailInput = document.getElementById('emailInput');
     const passwordInput = document.getElementById('passwordInput');
@@ -257,7 +295,7 @@
     let currentDoc = { title: '', content: '' };
     let footnotes = [];
 
-    // 전역 스코프 바인딩 (HTML 인라인 onClick 핸들러 연동용)
+    // 인라인 핸들러용 윈도우 스코프 매핑
     window.loadPage = loadPage;
     window.searchWiki = searchWiki;
     window.createNewWiki = createNewWiki;
@@ -267,32 +305,32 @@
     window.deleteDoc = deleteDoc;
     window.showTooltip = showTooltip;
 
-    // --- 인증 관리 비즈니스 로직 ---
-    function getAuthCredentials() {
+    // 계정 입력값 검증
+    function getCredentials() {
       const email = emailInput.value.trim();
       const password = passwordInput.value.trim();
       if (!email || !password) {
-        alert('이메일과 비밀번호를 모두 기입바랍니다.');
+        alert('이메일과 비밀번호를 모두 입력해주세요.');
         return null;
       }
       if (password.length < 6) {
-        alert('보안을 위해 비밀번호는 6자 이상이어야 합니다.');
+        alert('비밀번호는 6자리 이상이어야 안전합니다.');
         return null;
       }
       return { email, password };
     }
 
     signupBtn.addEventListener('click', async () => {
-      const creds = getAuthCredentials();
+      const creds = getCredentials();
       if (!creds) return;
       try {
         await createUserWithEmailAndPassword(auth, creds.email, creds.password);
-        alert('성공적으로 가입되었습니다.');
+        alert('회원가입이 완료되었습니다!');
       } catch (err) { alert(getKoreanError(err.code)); }
     });
 
     loginBtn.addEventListener('click', async () => {
-      const creds = getAuthCredentials();
+      const creds = getCredentials();
       if (!creds) return;
       try {
         await signInWithEmailAndPassword(auth, creds.email, creds.password);
@@ -301,42 +339,39 @@
 
     logoutBtn.addEventListener('click', () => signOut(auth));
 
-    // 세션 감시체계
+    // 실시간 세션 감시 상태 변화 트래킹
     onAuthStateChanged(auth, (user) => {
       if (user) {
         currentUser = user;
+        // 로그인 완료 상태: 로그인 창 숨기고 내비게이션 바 + 위키 박스 노출
         authSection.classList.add('hidden');
-        mainSection.classList.remove('hidden');
         wikiNav.classList.remove('hidden');
-        userEmailDisplay.textContent = `${user.email}`;
+        mainSection.classList.remove('hidden');
         
-        // 엔터키 검색 바인딩 추가
-        searchInput.onkeypress = (e) => { if(e.keyCode === 13) searchWiki(); };
-        
+        searchInput.onkeypress = (e) => { if (e.keyCode === 13) searchWiki(); };
         loadPage('메인페이지');
       } else {
         currentUser = null;
+        // 로그아웃 상태: 전역 요소 숨기고 단독 카드 로그인 화면만 노출
         authSection.classList.remove('hidden');
-        mainSection.classList.add('hidden');
         wikiNav.classList.add('hidden');
+        mainSection.classList.add('hidden');
         emailInput.value = '';
         passwordInput.value = '';
       }
     });
 
-    // --- Core 위키 엔진 커스텀 구현 ---
-
+    // 위키 페이지 로더 구현
     async function loadPage(title) {
       if (!currentUser || !title) return;
       
       document.getElementById('editMode').classList.add('hidden');
       document.getElementById('viewMode').classList.remove('hidden');
       document.getElementById('footnoteSection').style.display = 'none';
-      document.getElementById('displayTitle').innerText = "데이터 로드 중...";
+      document.getElementById('displayTitle').innerText = "불러오는 중...";
 
       if (title === '메인페이지') {
         try {
-          // 최근 문서 목록 리스트업 처리 (데이터 대시보드 구조)
           const allDocsRef = ref(database, `users/${currentUser.uid}/wiki`);
           const snapshot = await get(allDocsRef);
           let listHtml = '';
@@ -345,34 +380,34 @@
             const data = snapshot.val();
             const arr = Object.values(data);
             
-            // 최종 수정일 내림차순 정렬 후 최상위 10개 추출
+            // 최근 수정일 기준 정렬 후 10개 커팅
             arr.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
             const recent = arr.slice(0, 10);
             
             listHtml = recent.map(d => {
               const safeTitle = d.title.replace(/'/g, "\\'");
-              const shortDate = d.updatedAt ? d.updatedAt.substring(5, 16) : ''; // "MM-dd HH:mm" 포맷팅
+              // MM-dd HH:mm 구조 슬라이싱 가공
+              const shortDate = d.updatedAt ? d.updatedAt.substring(5, 16) : ''; 
               return `<li><a onclick="loadPage('${safeTitle}')">${escapeHTML(d.title)}</a> <small class="text-muted ms-2">${shortDate}</small></li>`;
             }).join('');
           }
 
-          document.getElementById('displayTitle').innerText = "🏠 Animal Arkive Knowledge Base";
+          // image_0a48cb.png 디자인 프레임 매핑
+          document.getElementById('displayTitle').innerText = "🏠 My Knowledge Database";
           document.getElementById('displayContent').innerHTML = `
             <div class="row mt-4">
               <div class="col-md-7">
-                <h5 class="fw-bold mb-3 border-bottom pb-2">📑 최근 수정된 아카이브 내역</h5>
-                <ul class="recent-list">${listHtml || '<li class="text-muted">아직 등록된 하위 위키 문서가 존재하지 않습니다.</li>'}</ul>
+                <h5 class="fw-bold mb-3 border-bottom pb-2">📑 최근 수정된 문서</h5>
+                <ul class="recent-list">${listHtml || '<li class="text-muted">기록이 없습니다.</li>'}</ul>
               </div>
               <div class="col-md-5">
-                <div class="card grammar-card p-3 shadow-sm">
-                  <h6 class="fw-bold text-dark border-bottom pb-2">🛠 개인 위키 마크업 문법</h6>
-                  <div class="card-body p-0" style="font-size: 0.88rem; line-height: 1.7;">
-                    <strong>볼드 표기:</strong> <code>'''텍스트'''</code><br>
-                    <strong>취소선 표기:</strong> <code>~~텍스트~~</code><br>
-                    <strong>대섹션 정의:</strong> <code>== 섹션명 ==</code> (줄 첫 칸에 작성)<br>
-                    <strong>내부 위키 링크:</strong> <code>[[문서제목]]</code><br>
-                    <strong>외부 링크 연동:</strong> <code>[https://m.blog.naver.com/elvispress/40209590170]</code><br>
-                    <strong>하단 주석 배치:</strong> <code>[* 설명 내용]</code>
+                <div class="card grammar-panel card p-3 shadow-sm">
+                  <h6 class="fw-bold text-dark"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>문법 안내</h6>
+                  <div class="card-body p-0 mt-2" style="font-size: 0.88rem; line-height: 1.75; color: #555;">
+                    볼드: <code>'''글자'''</code> / 취소선: <code>~~글자~~</code><br>
+                    섹션: <code>== 제목 ==</code><br>
+                    내부링크: <code>[[문서명]]</code> / 외부: <code>[[URL|이름]]</code><br>
+                    주석: <code>[* 내용]</code>
                   </div>
                 </div>
               </div>
@@ -381,17 +416,14 @@
           document.getElementById('deleteBtn').classList.add('hidden');
           document.getElementById('editBtn').classList.add('hidden');
           return;
-        } catch (err) {
-          console.error(err);
-        }
+        } catch (err) { console.error(err); }
       }
 
-      // 일반 개별 문서 로드 파트
+      // 일반 위키 문서 노출 처리 영역
       document.getElementById('deleteBtn').classList.remove('hidden');
       document.getElementById('editBtn').classList.remove('hidden');
       
       try {
-        // Firebase는 파일 경로 구조 특성상 문서 제목 내 특수문자나 마침표 처리를 위해 안전하게 인코딩 보정 후 키값으로 사용
         const safeKey = btoa(encodeURIComponent(title)).replace(/=/g, '');
         const docRef = ref(database, `users/${currentUser.uid}/wiki/${safeKey}`);
         const snapshot = await get(docRef);
@@ -403,7 +435,7 @@
           
           document.getElementById('displayTitle').innerText = data.title;
           document.getElementById('displayContent').innerHTML = parsed.html;
-          document.getElementById('metaInfo').innerText = `최종 수정시각: ${data.updatedAt || '-'}`;
+          document.getElementById('metaInfo').innerText = `최종 수정: ${data.updatedAt || '-'}`;
           
           if (parsed.fns.length > 0) {
             footnotes = parsed.fns;
@@ -411,69 +443,63 @@
             document.getElementById('footnoteItems').innerHTML = parsed.fns.map(f => `<li>${escapeHTML(f)}</li>`).join('');
           }
         } else {
-          // 비어있는 새 문서 처리 규칙
           currentDoc = { title: title, content: '' };
           document.getElementById('displayTitle').innerText = title;
-          document.getElementById('displayContent').innerHTML = `<p class="text-muted">요청하신 "${escapeHTML(title)}" 문서의 기록 본문이 없습니다. 우측 하단의 편집 버튼을 눌러 첫 서술을 기록해 보세요.</p>`;
+          document.getElementById('displayContent').innerHTML = "문서가 없습니다. 편집을 시작하세요.";
           document.getElementById('metaInfo').innerText = '';
         }
       } catch (err) {
         console.error(err);
-        document.getElementById('displayContent').innerText = "데이터베이스 보안 규칙 거부 혹은 네트워크 연결 장애로 로드에 실패했습니다.";
+        document.getElementById('displayContent').innerText = "데이터 통신 장애로 문서를 불러오지 못했습니다.";
       }
     }
 
-    // 마크업 파싱 로직
+    // 마크업 원본 정규식 파서
     function parseWiki(text) {
       if (!text) return { html: "", fns: [] };
       let res = escapeHTML(text);
       let fns = [];
       let toc = [];
 
-      // 1. 주석 처리 [* 내용]
+      // 1. 주석 파싱 [* 내용]
       res = res.replace(/\[\* (.*?)\]/g, (m, p1) => {
         fns.push(p1);
         return `<sup class="footnote" onclick="showTooltip(event, ${fns.length - 1})">[${fns.length}]</sup>`;
       });
 
-      // 2. 볼드 처리 및 취소선 컴포넌트 변환
+      // 2. 볼드 / 취소선 교체
       res = res.replace(/'''(.*?)'''/g, '<strong>$1</strong>');
       res = res.replace(/~~(.*?)~~/g, '<del class="text-muted">$1</del>');
 
-      // 3. 문단 구분용 인덱싱 (== 섹션 제목 ==)
-      // 이스케이프 때문에 생겨난 &lt; &gt; 인코딩 값 보정 매칭
+      // 3. 섹션 라인 컴파일 (== 제목 ==)
       res = res.replace(/^==\s*(.*?)\s*==$/gm, (m, p1) => {
         const id = "section_" + toc.length;
         toc.push({ id: id, title: p1 });
         return `<h3 id="${id}" class="mt-4 border-bottom pb-2 fw-bold text-dark">${p1}</h3>`;
       });
 
-      // 목차 박스 레이아웃 유동적 추가 조립
-      if (toc.length >= 2) {
+      // 목차 트리 추가
+      if (toc.length > 2) {
         let tocHtml = `<div class="toc-container"><span class="toc-title">목차</span><ul>` + 
-          toc.map(t => `<li><a href="#${t.id}" style="color:#42a5f5; text-decoration:none;">${t.title}</a></li>`).join('') + `</ul></div><br>`;
+          toc.map(t => `<li><a href="#${t.id}" style="color:#3498db; text-decoration:none;">${t.title}</a></li>`).join('') + `</ul></div><br>`;
         res = tocHtml + res;
       }
 
-      // 4. 하이퍼링크 변환 (내부 문서 이동 vs 외부 링크 아웃)
-      // 대괄호 분기를 위한 디코딩 역추적 정규식 설계
+      // 4. 하이퍼링크 라우팅 처리
       res = res.replace(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (m, link, name) => {
-        const display = name ? name.trim() : link.trim();
-        const target = link.trim();
-        // &amp; 처리 등 특수문자 원상 복구 후 검사
-        const rawTarget = target.replace(/&amp;/g, '&');
-        if (rawTarget.startsWith('http://') || rawTarget.startsWith('https://')) {
-          return `<a href="${rawTarget}" target="_blank" class="text-primary text-decoration-none" rel="noopener">${display} 🔗</a>`;
+        const d = name ? name.trim() : link.trim();
+        const l = link.trim().replace(/&amp;/g, '&');
+        if (l.startsWith('http://') || l.startsWith('https://')) {
+          return `<a href="${l}" target="_blank" class="text-primary text-decoration-none" rel="noopener">${d} 🔗</a>`;
         } else {
-          const escapedParam = rawTarget.replace(/'/g, "\\'");
-          return `<a onclick="loadPage('${escapedParam}')" class="text-success fw-bold" style="cursor:pointer; text-decoration:none;">${display}</a>`;
+          return `<a onclick="loadPage('${l.replace(/'/g, "\\'")}')" class="text-success fw-bold" style="cursor:pointer; text-decoration:none;">${d}</a>`;
         }
       });
 
       return { html: res.replace(/\n/g, '<br>'), fns: fns };
     }
 
-    // 툴팁 노출 제어
+    // 주석 팝업 툴팁 제어
     function showTooltip(e, i) {
       e.stopPropagation();
       const t = document.getElementById('fnTooltip');
@@ -490,11 +516,9 @@
       document.getElementById('editorTextarea').value = currentDoc.content;
     }
 
-    function cancelEdit() {
-      loadPage(currentDoc.title);
-    }
+    function cancelEdit() { loadPage(currentDoc.title); }
 
-    // 데이터 업서트 처리 (UPDATE / CREATE)
+    // 문서 전송 (Upsert)
     async function submitWiki() {
       if (!currentUser) return;
       const saveBtn = document.getElementById('saveBtn');
@@ -505,7 +529,6 @@
       const safeKey = btoa(encodeURIComponent(title)).replace(/=/g, '');
 
       const now = new Date();
-      // YYYY-MM-DD HH:mm 형태로 포맷팅 조립
       const formattedDate = now.getFullYear() + '-' + 
         String(now.getMonth() + 1).padStart(2, '0') + '-' + 
         String(now.getDate()).padStart(2, '0') + ' ' + 
@@ -514,83 +537,60 @@
 
       try {
         const docRef = ref(database, `users/${currentUser.uid}/wiki/${safeKey}`);
-        await set(docRef, {
-          title: title,
-          content: newContent,
-          updatedAt: formattedDate
-        });
-        
+        await set(docRef, { title, content: newContent, updatedAt: formattedDate });
         currentDoc.content = newContent;
         saveBtn.disabled = false;
         loadPage(title);
       } catch (err) {
-        console.error(err);
-        alert('문서 저장 권한이 없습니다.');
+        alert('저장에 실패했습니다.');
         saveBtn.disabled = false;
       }
     }
 
-    // 데이터 삭제 처리 (DELETE)
+    // 문서 완전 삭제
     async function deleteDoc() {
-      if (!currentUser || !currentDoc.title) return;
-      if (currentDoc.title === '메인페이지') return;
-
-      if (confirm(`현재 읽고 계신 "${currentDoc.title}" 문서를 영구 삭제 처리할까요?`)) {
+      if (!currentUser || !currentDoc.title || currentDoc.title === '메인페이지') return;
+      if (confirm("삭제할까요?")) {
         const safeKey = btoa(encodeURIComponent(currentDoc.title)).replace(/=/g, '');
         try {
-          const docRef = ref(database, `users/${currentUser.uid}/wiki/${safeKey}`);
-          await remove(docRef);
+          await remove(ref(database, `users/${currentUser.uid}/wiki/${safeKey}`));
           loadPage('메인페이지');
-        } catch (err) {
-          alert('삭제 권한이 없거나 차단되었습니다.');
-        }
+        } catch (err) { alert('삭제 처리가 거부되었습니다.'); }
       }
     }
 
     function searchWiki() {
       const v = searchInput.value.trim();
-      if (v) {
-        searchInput.value = '';
-        loadPage(v);
-      }
+      if (v) { searchInput.value = ''; loadPage(v); }
     }
 
     function createNewWiki() {
-      const t = prompt("새로 개설할 위키 문서의 제목을 입력하세요:");
+      const t = prompt("새 제목:");
       if (t && t.trim()) {
-        if(t.trim() === '메인페이지') {
-          alert('예약어는 문서 제목으로 선점할 수 없습니다.');
-          return;
-        }
+        if(t.trim() === '메인페이지') { alert('예약된 핵심 키워드는 제목으로 선점할 수 없습니다.'); return; }
         loadPage(t.trim());
       }
     }
 
-    // 헬퍼 이스케이프 처리
     function escapeHTML(text) {
-      return String(text)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+      return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
     function getKoreanError(code) {
       switch (code) {
-        case 'auth/invalid-credential': return '이메일 계정 정보 또는 비밀번호가 틀렸습니다.';
-        case 'auth/email-already-in-use': return '이미 등록 관리 중인 계정 이메일입니다.';
-        case 'auth/weak-password': return '최소 6자리 이상의 패스워드가 필요합니다.';
-        default: return `인증 오류가 발생했습니다 (${code})`;
+        case 'auth/invalid-credential': return '이메일 주소 또는 비밀번호가 올바르지 않습니다.';
+        case 'auth/email-already-in-use': return '이미 개설되어 사용 중인 계정 메일 주소입니다.';
+        case 'auth/weak-password': return '최소 6자 이상의 비밀번호가 요구됩니다.';
+        default: return `인증 실패 예외 발생: ${code}`;
       }
     }
   </script>
   
   <script>
-    // 전역 툴팁 소멸자 함수
+    // 클릭 외부 영역 초기화 소멸자
     function hideTooltip() { 
       const t = document.getElementById('fnTooltip');
-      if(t) t.style.display = 'none'; 
+      if (t) t.style.display = 'none'; 
     }
   </script>
 </body>
