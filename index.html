@@ -14,7 +14,7 @@
       margin: 0;
     }
     
-    /* 상단 내비게이션 바 */
+    /* 상단 네비게이션 바 */
     .navbar { 
       background-color: #2c3e50; 
       border-bottom: 3px solid #3498db; 
@@ -313,6 +313,9 @@
     let currentUser = null;
     let currentDoc = { title: '', content: '' };
     let footnotes = [];
+    
+    // [중요 수정] 현재 회원가입 절차를 직접 밟고 있는 중인지 구별하는 안전 플래그 설정
+    let isSigningUp = false;
 
     // 전역 스코프 바인딩 처리
     window.loadPage = loadPage;
@@ -343,11 +346,15 @@
       const creds = getCredentials();
       if (!creds) return;
       try {
+        isSigningUp = true; // 회원가입 시작 플래그 On
         await createUserWithEmailAndPassword(auth, creds.email, creds.password);
-        // 가입 직후 순목록 폼을 내리고 닉네임 기입 컴포넌트 활성화 조치
+        // 가입 직후 입력 폼을 내리고 닉네임 기입 컴포넌트 활성화 조치
         credentialsForm.classList.add('hidden');
         nicknameForm.classList.remove('hidden');
-      } catch (err) { alert(getKoreanError(err.code)); }
+      } catch (err) { 
+        isSigningUp = false;
+        alert(getKoreanError(err.code)); 
+      }
     });
 
     // 닉네임 영구 저장 단추 액션
@@ -362,6 +369,8 @@
           // 사용자 프로필 객체 동기화 연동
           await updateProfile(auth.currentUser, { displayName: nick });
           alert(`${nick}님, Animal Arkive에 오신 것을 환영합니다!`);
+          
+          isSigningUp = false; // 가입 절차 종료
           
           // 화면 전환 제어 처리
           authSection.classList.add('hidden');
@@ -380,6 +389,7 @@
       const creds = getCredentials();
       if (!creds) return;
       try {
+        isSigningUp = false; // 일반 로그인이므로 플래그 Off
         await signInWithEmailAndPassword(auth, creds.email, creds.password);
       } catch (err) { alert(getKoreanError(err.code)); }
     });
@@ -391,8 +401,8 @@
       if (user) {
         currentUser = user;
         
-        // 중요 분기: 가입 절차 중 닉네임을 설정하기 전인 유저는 메인 위키로 패스시키지 않고 닉네임 입력 대기
-        if (!user.displayName) {
+        // 방금 회원가입 버튼을 누른 유저이고, 아직 닉네임이 없다면 -> 닉네임 폼 노출
+        if (isSigningUp && !user.displayName) {
           authSection.classList.remove('hidden');
           credentialsForm.classList.add('hidden');
           nicknameForm.classList.remove('hidden');
@@ -401,16 +411,23 @@
           return;
         }
 
-        // 정상적으로 닉네임 프로필 정보가 바인딩 완료된 유저 프리패스
-        authSection.classList.add('hidden');
-        wikiNav.classList.remove('hidden');
-        mainSection.classList.remove('hidden');
-        userBadge.textContent = `👤 ${user.displayName}님`;
-        
-        searchInput.onkeypress = (e) => { if (e.keyCode === 13) searchWiki(); };
-        loadPage('메인페이지');
+        // 일반적인 자동 로그인 혹은 로그인 성공 상태인데 디스플레이 네임이 있는 경우 -> 프리패스
+        if (user.displayName) {
+          authSection.classList.add('hidden');
+          wikiNav.classList.remove('hidden');
+          mainSection.classList.remove('hidden');
+          userBadge.textContent = `👤 ${user.displayName}님`;
+          
+          searchInput.onkeypress = (e) => { if (e.keyCode === 13) searchWiki(); };
+          loadPage('메인페이지');
+        } else {
+          // 가입 프로세스 중이 아닌데(isSigningUp = false) 닉네임이 없는 세션이 감지된 경우 (에러 상태 방지)
+          // 안전하게 강제 로그아웃 시켜 초기 로그인 화면으로 되돌립니다.
+          signOut(auth);
+        }
       } else {
         currentUser = null;
+        isSigningUp = false;
         authSection.classList.remove('hidden');
         credentialsForm.classList.remove('hidden');
         nicknameForm.classList.add('hidden');
@@ -447,7 +464,6 @@
             listHtml = recent.map(d => {
               const safeTitle = d.title.replace(/'/g, "\\'");
               const shortDate = d.updatedAt ? d.updatedAt.substring(5, 16) : ''; 
-              // 리스트에 작성자 닉네임 나란히 노출 처리 연동
               const authorLabel = d.author ? `<small class="text-secondary ms-2">by ${escapeHTML(d.author)}</small>` : '';
               return `<li><a onclick="loadPage('${safeTitle}')">${escapeHTML(d.title)}</a> ${authorLabel} <small class="text-muted ms-2">${shortDate}</small></li>`;
             }).join('');
@@ -461,7 +477,7 @@
                 <ul class="recent-list">${listHtml || '<li class="text-muted">기록이 없습니다.</li>'}</ul>
               </div>
               <div class="col-md-5">
-                <div class="card grammar-panel card p-3 shadow-sm">
+                <div class="card grammar-panel p-3 shadow-sm">
                   <h6 class="fw-bold text-dark"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>문법 안내</h6>
                   <div class="card-body p-0 mt-2" style="font-size: 0.88rem; line-height: 1.75; color: #555;">
                     볼드: <code>'''글자'''</code> / 취소선: <code>~~글자~~</code><br>
@@ -495,7 +511,6 @@
           document.getElementById('displayTitle').innerText = data.title;
           document.getElementById('displayContent').innerHTML = parsed.html;
           
-          // 하단 메타정보 영역에 작성자(author) 닉네임 맵 데이터 출력 바인딩
           const displayAuthor = data.author ? ` | 작성자: ${data.author}` : '';
           document.getElementById('metaInfo').innerText = `최종 수정: ${data.updatedAt || '-'}${displayAuthor}`;
           
@@ -572,7 +587,6 @@
 
     function cancelEdit() { loadPage(currentDoc.title); }
 
-    // 문서 수정 업서트 트랜잭션 규칙
     async function submitWiki() {
       if (!currentUser) return;
       const saveBtn = document.getElementById('saveBtn');
@@ -591,7 +605,6 @@
 
       try {
         const docRef = ref(database, `users/${currentUser.uid}/wiki/${safeKey}`);
-        // 데이터 구조 스키마 바인딩 확장 -> 현재 유저의 프로필 닉네임(displayName) 같이 영구 동적 저장 추가
         await set(docRef, { 
           title: title, 
           content: newContent, 
