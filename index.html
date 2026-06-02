@@ -191,6 +191,7 @@
 <body onclick="hideTooltip()">
   <div id="fnTooltip" class="footnote-tooltip"></div>
 
+  <!-- ================= 상단 네비게이션 바 (로그인 완료 후) ================= -->
   <nav id="wikiNav" class="navbar navbar-expand-lg navbar-dark sticky-top hidden">
     <div class="container">
       <a class="navbar-brand" onclick="loadPage('메인페이지')">🦁 Animal Arkive 🐯</a>
@@ -204,11 +205,13 @@
     </div>
   </nav>
 
+  <!-- ================= 로그인 / 회원가입 / 닉네임 설정 섹션 ================= -->
   <div id="authSection" class="auth-outer-container">
     <div class="auth-container">
       <div class="auth-header-title">🦁 Animal Arkive 🐯</div>
       <div class="auth-subtitle">Firebase Authentication + Realtime Database 덕질 아카이브</div>
       
+      <!-- 기본 로그인 폼 입력부 -->
       <div id="credentialsForm" class="auth-box">
         <h3>로그인 / 회원가입</h3>
         <input id="emailInput" class="form-control" type="email" placeholder="이메일" />
@@ -221,6 +224,7 @@
         </div>
       </div>
 
+      <!-- [최초 가입자 전용] 닉네임 설정 폼 입력부 -->
       <div id="nicknameForm" class="auth-box hidden">
         <h3>닉네임 설정</h3>
         <p class="text-muted small">Animal Arkive 위키에서 서술자(작성자) 이름으로 활용될 닉네임을 등록해 주세요.</p>
@@ -230,16 +234,20 @@
     </div>
   </div>
 
+  <!-- ================= 메인 위키 레이아웃 대시보드 ================= -->
   <div id="mainSection" class="container wiki-container hidden">
+    <!-- 읽기 모드 뷰어 -->
     <div id="viewMode">
       <h1 id="displayTitle" class="wiki-title">로딩 중...</h1>
       <div id="displayContent" class="wiki-content"></div>
       
+      <!-- 주석 트리거 -->
       <div id="footnoteSection" class="footnote-list" style="display:none;">
         <h6 class="fw-bold">[주석]</h6>
         <ol id="footnoteItems"></ol>
       </div>
       
+      <!-- 하단 메타 데이터 인포바 -->
       <div class="mt-5 pt-3 border-top d-flex justify-content-between align-items-center">
         <small id="metaInfo" class="text-muted"></small>
         <div>
@@ -249,9 +257,11 @@
       </div>
     </div>
 
+    <!-- 문서 편집 폼 -->
     <div id="editMode" class="hidden">
       <h1 class="wiki-title">편집: <span id="editTitleLabel"></span></h1>
       
+      <!-- 편집 편의성을 위한 상단 문법 가이드 글상자 고정 배치 -->
       <div class="card grammar-panel p-3 mb-3 shadow-sm">
         <h6 class="fw-bold text-dark mb-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>위키 문법 가이드북</h6>
         <div class="row" style="font-size: 0.85rem; line-height: 1.6; color: #555;">
@@ -273,6 +283,7 @@
     </div>
   </div>
 
+  <!-- 파이어베이스 SDK 연동 핵심 로직 스크립트 -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import {
@@ -325,7 +336,7 @@
 
     let currentUser = null;
     let currentDoc = { title: '', content: '' };
-    let footnotes = []; // 주석의 가공된 최종 HTML을 저장하는 저장소
+    let footnotes = []; 
     let isSigningUp = false;
 
     // 전역 스코프 바인딩 처리
@@ -403,7 +414,7 @@
 
     logoutBtn.addEventListener('click', () => signOut(auth));
 
-    // 실시간 세션 라이프사이클 홀더 감시자
+    // 실시간 세션 라이프사이클 홀감시자
     onAuthStateChanged(auth, (user) => {
       if (user) {
         currentUser = user;
@@ -450,7 +461,6 @@
       document.getElementById('footnoteSection').style.display = 'none';
       document.getElementById('displayTitle').innerText = "데이터 호출 중...";
 
-      // [핵심 변경] 타 사용자와 문서를 공유하기 위해 전체 공용 경로(shared_wiki)를 참조합니다.
       const wikiRootRef = ref(database, 'shared_wiki');
 
       if (title === '메인페이지') {
@@ -519,7 +529,7 @@
           document.getElementById('metaInfo').innerText = `최종 수정: ${data.updatedAt || '-'}${displayAuthor}`;
           
           if (parsed.fns.length > 0) {
-            footnotes = parsed.fns; // 가공이 모두 끝난 내부 HTML 배열 탑재
+            footnotes = parsed.fns; 
             document.getElementById('footnoteSection').style.display = 'block';
             document.getElementById('footnoteItems').innerHTML = parsed.fns.map(f => `<li>${f}</li>`).join('');
           }
@@ -534,11 +544,11 @@
       }
     }
 
-    // 내부 공통 인라인 마크업 파서 (볼드체, 취소선, 하이퍼링크)
+    // 내부 공통 인라인 마크업 파서
     function parseInlineStyles(text) {
       let res = text;
-      // 볼드체
-      res = res.replace(/'''(.*?)'''/g, '<strong>$1</strong>');
+      // [해결 핵심] escapeHTML을 거치며 치환된 따옴표 형태(&#039;)를 기준으로 볼드체를 정상 식별하도록 수정
+      res = res.replace(/&#039;&#039;&#039;(.*?)&#039;&#039;&#039;/g, '<strong>$1</strong>');
       // 취소선
       res = res.replace(/~~(.*?)~~/g, '<del class="text-muted">$1</del>');
       // 링크 처리
@@ -556,13 +566,12 @@
 
     function parseWiki(text) {
       if (!text) return { html: "", fns: [] };
-      let res = escapeHTML(text);
+      let res = escapeHTML(text); // 여기서 문법 기호들이 일차 변환됩니다.
       let fns = [];
       let toc = [];
 
       // 1. 주석 [* 내용] 추출 분리 작업 진행
       res = res.replace(/\[\* (.*?)\]/g, (m, p1) => {
-        // 주석 본문 텍스트 내부에 존재하는 위키 스타일 서식들을 2차로 치환 파싱하여 저장합니다.
         const stylizedFootnote = parseInlineStyles(p1);
         fns.push(stylizedFootnote);
         return `<sup class="footnote" onclick="showTooltip(event, ${fns.length - 1})">[${fns.length}]</sup>`;
@@ -590,7 +599,7 @@
     function showTooltip(e, i) {
       e.stopPropagation();
       const t = document.getElementById('fnTooltip');
-      t.innerHTML = footnotes[i]; // 주석 내부 링크 작동을 위해 innerText에서 innerHTML로 교체
+      t.innerHTML = footnotes[i]; 
       t.style.display = 'block';
       t.style.left = (e.pageX + 10) + 'px'; 
       t.style.top = (e.pageY - 30) + 'px';
@@ -622,7 +631,6 @@
         String(now.getMinutes()).padStart(2, '0');
 
       try {
-        // [핵심 변경] 저장 경로를 shared_wiki로 이전하여 모든 유저가 동기화되도록 수정
         const docRef = ref(database, `shared_wiki/${safeKey}`);
         await set(docRef, { 
           title: title, 
@@ -644,7 +652,6 @@
       if (confirm("삭제할까요?")) {
         const safeKey = btoa(encodeURIComponent(currentDoc.title)).replace(/=/g, '');
         try {
-          // [핵심 변경] 삭제 시에도 공용 경로(shared_wiki)에서 소거
           await remove(ref(database, `shared_wiki/${safeKey}`));
           loadPage('메인페이지');
         } catch (err) { alert('삭제 처리가 거부되었습니다.'); }
