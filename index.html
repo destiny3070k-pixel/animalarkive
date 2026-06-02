@@ -26,6 +26,15 @@
       cursor: pointer; 
     }
     
+    /* 네비게이션 내부 요소 래퍼 (모바일 대응용 flex 셋업) */
+    .nav-controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      width: 100%;
+    }
+    
     /* 인증 통합 컨테이너 */
     .auth-outer-container {
       min-height: calc(100vh - 40px);
@@ -85,7 +94,7 @@
       line-height: 1.6;
     }
 
-    /* 위키 레이아웃 */
+    /* 위키 레이아웃 기본 (PC 기준) */
     .wiki-container { 
       background-color: #ffffff;
       border: 1px solid #dee2e6;
@@ -186,6 +195,50 @@
     .hidden { 
       display: none !important; 
     }
+
+    /* ================= 📱 스마트폰 모바일 디바이스 전용 최적화 미디어 쿼리 ================= */
+    @media (max-width: 991.98px) {
+      .navbar .container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .nav-controls {
+        display: grid;
+        grid-template-columns: 1fr auto auto; /* 검색창이 남은 여백을 꽉 채우고 버튼 배치 */
+        width: 100%;
+        gap: 6px;
+      }
+      #searchInput {
+        max-width: 100% !important; /* 모바일에서 고정폭 해제 */
+        width: 100%;
+      }
+      #userBadge {
+        grid-column: 1 / -1; /* 유저 정보 배지는 가장 상단에 한 줄 전체 차지 */
+        margin-bottom: 4px;
+        color: #fff !important;
+      }
+      .logout-wrapper {
+        grid-column: 1 / -1;
+        text-align: right;
+        margin-top: 2px;
+      }
+      
+      /* 본문 컨테이너 모바일 여백 축소 */
+      .wiki-container {
+        padding: 20px;
+        margin-top: 15px;
+        margin-bottom: 25px;
+        border-radius: 8px;
+      }
+      .wiki-title {
+        font-size: 24px;
+        margin-bottom: 16px;
+      }
+      .auth-container {
+        padding: 25px 20px;
+      }
+    }
   </style>
 </head>
 <body onclick="hideTooltip()">
@@ -194,12 +247,14 @@
   <nav id="wikiNav" class="navbar navbar-expand-lg navbar-dark sticky-top hidden">
     <div class="container">
       <a class="navbar-brand" onclick="loadPage('메인페이지')">🦁 Animal Arkive 🐯</a>
-      <div class="ms-auto d-flex align-items-center">
-        <span id="userBadge" class="text-light me-3 d-none d-md-inline" style="font-size: 14px; font-weight: 500;"></span>
-        <input id="searchInput" class="form-control me-2" type="search" placeholder="제목 검색..." style="max-width: 200px; height: 38px;">
-        <button class="btn btn-outline-light me-2" style="height: 38px; min-width: 60px;" onclick="searchWiki()">검색</button>
-        <button class="btn btn-primary me-3" style="height: 38px;" onclick="createNewWiki()">새 문서</button>
-        <button class="btn btn-sm btn-link text-light text-decoration-none" id="logoutBtn" style="font-size: 13px; opacity: 0.8;">로그아웃</button>
+      <div class="nav-controls">
+        <span id="userBadge" class="text-light" style="font-size: 14px; font-weight: 500;"></span>
+        <input id="searchInput" class="form-control" type="search" placeholder="제목 검색..." style="max-width: 180px; height: 38px;">
+        <button class="btn btn-outline-light" style="height: 38px; min-width: 55px; white-space: nowrap;" onclick="searchWiki()">검색</button>
+        <button class="btn btn-primary" style="height: 38px; min-width: 70px; white-space: nowrap;" onclick="createNewWiki()">새 문서</button>
+        <div class="logout-wrapper">
+          <button class="btn btn-sm btn-link text-light text-decoration-none p-0" id="logoutBtn" style="font-size: 13px; opacity: 0.8;">로그아웃</button>
+        </div>
       </div>
     </div>
   </nav>
@@ -240,7 +295,7 @@
         <ol id="footnoteItems"></ol>
       </div>
       
-      <div class="mt-5 pt-3 border-top d-flex justify-content-between align-items-center">
+      <div class="mt-5 pt-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
         <small id="metaInfo" class="text-muted"></small>
         <div>
           <button id="deleteBtn" class="btn btn-sm btn-outline-danger me-2" onclick="deleteDoc()">삭제</button>
@@ -254,18 +309,18 @@
       
       <div class="card grammar-panel p-3 mb-3 shadow-sm">
         <h6 class="fw-bold text-dark mb-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>위키 문법 가이드북</h6>
-        <div class="row" style="font-size: 0.85rem; line-height: 1.6; color: #555;">
-          <div class="col-6 col-md-3"><strong>텍스트:</strong> <code>'''볼드체'''</code></div>
-          <div class="col-6 col-md-3"><strong>효과:</strong> <code>~~취소선~~</code></div>
-          <div class="col-6 col-md-3"><strong>문단 분리:</strong> <code>== 문단제목 ==</code></div>
-          <div class="col-6 col-md-3"><strong>주석 달기:</strong> <code>[* 설명 내용]</code></div>
-          <div class="col-6 col-md-3"><strong>내부 링크:</strong> <code>[[문서이름]]</code></div>
-          <div class="col-6 col-md-3"><strong>외부 링크:</strong> <code>[[주소|표시명]]</code></div>
-          <div class="col-12 col-md-6 text-muted"><span class="text-primary">*</span> 주석 내부에 볼드, 취소선, 링크를 중첩하여 작성할 수 있습니다.</div>
+        <div class="row g-2" style="font-size: 0.85rem; line-height: 1.6; color: #555;">
+          <div class="col-6 col-sm-3"><strong>텍스트:</strong> <code>'''볼드체'''</code></div>
+          <div class="col-6 col-sm-3"><strong>효과:</strong> <code>~~취소선~~</code></div>
+          <div class="col-6 col-sm-3"><strong>문단 분리:</strong> <code>== 문단제목 ==</code></div>
+          <div class="col-6 col-sm-3"><strong>주석 달기:</strong> <code>[* 설명 내용]</code></div>
+          <div class="col-6 col-sm-3"><strong>내부 링크:</strong> <code>[[문서이름]]</code></div>
+          <div class="col-6 col-sm-3"><strong>외부 링크:</strong> <code>[[주소|표시명]]</code></div>
+          <div class="col-12 text-muted"><span class="text-primary">*</span> 주석 내부에 볼드, 취소선, 링크를 중첩하여 작성할 수 있습니다.</div>
         </div>
       </div>
 
-      <textarea id="editorTextarea" class="form-control mb-3" rows="22" style="font-family: monospace; font-size: 14px;"></textarea>
+      <textarea id="editorTextarea" class="form-control mb-3" rows="18" style="font-family: monospace; font-size: 14px;"></textarea>
       <div class="d-flex justify-content-end">
         <button class="btn btn-outline-secondary me-2" onclick="cancelEdit()">취소</button>
         <button id="saveBtn" class="btn btn-primary" onclick="submitWiki()">저장하기</button>
@@ -306,7 +361,7 @@
     const auth = getAuth(app);
     const database = getDatabase(app);
 
-    // [슈퍼 관리자 지정 계정 정의]
+    // 슈퍼 관리자 지정 계정 정의
     const ADMIN_EMAIL = "destiny3070k@gmail.com";
 
     // 인터페이스 포인터 제어 노드
@@ -327,7 +382,7 @@
     const searchInput = document.getElementById('searchInput');
 
     let currentUser = null;
-    let currentDoc = { title: '', content: '', authorUid: '' }; // 문서 소유권 식별용 authorUid 바인딩
+    let currentDoc = { title: '', content: '', authorUid: '' }; 
     let footnotes = []; 
     let isSigningUp = false;
 
@@ -341,7 +396,7 @@
     window.deleteDoc = deleteDoc;
     window.showTooltip = showTooltip;
 
-    // 권한 검증 헬퍼 함수 (슈퍼 어드민이거나, 문서의 원작성자이거나, 새로 생성할 빈 문서일 경우 패스)
+    // 권한 검증 헬퍼 함수
     function checkPermission() {
       if (!currentUser) return false;
       if (currentUser.email === ADMIN_EMAIL) return true; 
@@ -489,7 +544,7 @@
 
           document.getElementById('displayTitle').innerText = "🏠 Animal Arkive";
           document.getElementById('displayContent').innerHTML = `
-            <div class="row mt-4">
+            <div class="row mt-2 g-4">
               <div class="col-md-7">
                 <h5 class="fw-bold mb-3 border-bottom pb-2">📑 최근 수정된 문서</h5>
                 <ul class="recent-list">${listHtml || '<li class="text-muted">기록이 없습니다.</li>'}</ul>
@@ -523,7 +578,6 @@
 
         if (snapshot.exists()) {
           const data = snapshot.val();
-          // 데이터 로드 시 작성자의 고유 UID(authorUid)도 데이터 객체에 함께 할당
           currentDoc = { title: data.title, content: data.content, authorUid: data.authorUid || '' };
           const parsed = parseWiki(data.content);
           
@@ -539,7 +593,6 @@
             document.getElementById('footnoteItems').innerHTML = parsed.fns.map(f => `<li>${f}</li>`).join('');
           }
         } else {
-          // 문서가 존재하지 않는 신규 생성 단계일 때는 authorUid를 공백으로 비워 일반 유저 권한 부여를 허용함
           currentDoc = { title: title, content: '', authorUid: '' };
           document.getElementById('displayTitle').innerText = title;
           document.getElementById('displayContent').innerHTML = "문서가 없습니다. 편집을 시작하세요.";
@@ -550,7 +603,6 @@
       }
     }
 
-    // 내부 공통 인라인 마크업 파서
     function parseInlineStyles(text) {
       let res = text;
       res = res.replace(/&#039;&#039;&#039;(.*?)&#039;&#039;&#039;/g, '<strong>$1</strong>');
@@ -605,9 +657,7 @@
       t.style.top = (e.pageY - 30) + 'px';
     }
 
-    // 편집 모드 진입 제한 제어
     function openEditMode() {
-      // 권한 검증 실패 시 차단
       if (!checkPermission()) {
         alert("본인이 직접 생성하거나 서술한 문서만 편집할 수 있습니다.");
         return;
@@ -623,7 +673,6 @@
     async function submitWiki() {
       if (!currentUser) return;
       
-      // 저장 액션 실행 전 한 번 더 화이트리스트 변조 검증 수행
       if (!checkPermission()) {
         alert("이 문서를 수정할 수 있는 권한이 상실되었습니다.");
         return;
@@ -645,9 +694,6 @@
 
       try {
         const docRef = ref(database, `shared_wiki/${safeKey}`);
-        
-        // 데이터 구조 스키마 모델 설계에 authorUid 필드를 영구 할당하여 고유 식별자로 활용
-        // 만약 관리자가 다른 사람의 문서를 강제 교정할 경우, 원래 원작자의 소유권을 보호하기 위해 기존 원작자의 authorUid를 유지합니다.
         const targetUid = (currentUser.email === ADMIN_EMAIL && currentDoc.authorUid) 
                           ? currentDoc.authorUid 
                           : currentUser.uid;
@@ -670,11 +716,9 @@
       }
     }
 
-    // 문서 삭제 모드 제한 제어
     async function deleteDoc() {
       if (!currentUser || !currentDoc.title || currentDoc.title === '메인페이지') return;
       
-      // 권한 검증 실패 시 차단
       if (!checkPermission()) {
         alert("본인이 직접 생성하거나 서술한 문서만 삭제할 수 있습니다.");
         return;
