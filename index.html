@@ -191,7 +191,6 @@
 <body onclick="hideTooltip()">
   <div id="fnTooltip" class="footnote-tooltip"></div>
 
-  <!-- ================= 상단 네비게이션 바 (로그인 완료 후) ================= -->
   <nav id="wikiNav" class="navbar navbar-expand-lg navbar-dark sticky-top hidden">
     <div class="container">
       <a class="navbar-brand" onclick="loadPage('메인페이지')">🦁 Animal Arkive 🐯</a>
@@ -205,13 +204,11 @@
     </div>
   </nav>
 
-  <!-- ================= 로그인 / 회원가입 / 닉네임 설정 섹션 ================= -->
   <div id="authSection" class="auth-outer-container">
     <div class="auth-container">
       <div class="auth-header-title">🦁 Animal Arkive 🐯</div>
       <div class="auth-subtitle">Firebase Authentication + Realtime Database 덕질 아카이브</div>
       
-      <!-- 기본 로그인 폼 입력부 -->
       <div id="credentialsForm" class="auth-box">
         <h3>로그인 / 회원가입</h3>
         <input id="emailInput" class="form-control" type="email" placeholder="이메일" />
@@ -224,7 +221,6 @@
         </div>
       </div>
 
-      <!-- [최초 가입자 전용] 닉네임 설정 폼 입력부 -->
       <div id="nicknameForm" class="auth-box hidden">
         <h3>닉네임 설정</h3>
         <p class="text-muted small">Animal Arkive 위키에서 서술자(작성자) 이름으로 활용될 닉네임을 등록해 주세요.</p>
@@ -234,20 +230,16 @@
     </div>
   </div>
 
-  <!-- ================= 메인 위키 레이아웃 대시보드 ================= -->
   <div id="mainSection" class="container wiki-container hidden">
-    <!-- 읽기 모드 뷰어 -->
     <div id="viewMode">
       <h1 id="displayTitle" class="wiki-title">로딩 중...</h1>
       <div id="displayContent" class="wiki-content"></div>
       
-      <!-- 주석 트리거 -->
       <div id="footnoteSection" class="footnote-list" style="display:none;">
         <h6 class="fw-bold">[주석]</h6>
         <ol id="footnoteItems"></ol>
       </div>
       
-      <!-- 하단 메타 데이터 인포바 -->
       <div class="mt-5 pt-3 border-top d-flex justify-content-between align-items-center">
         <small id="metaInfo" class="text-muted"></small>
         <div>
@@ -257,11 +249,9 @@
       </div>
     </div>
 
-    <!-- 문서 편집 폼 -->
     <div id="editMode" class="hidden">
       <h1 class="wiki-title">편집: <span id="editTitleLabel"></span></h1>
       
-      <!-- 편집 편의성을 위한 상단 문법 가이드 글상자 고정 배치 -->
       <div class="card grammar-panel p-3 mb-3 shadow-sm">
         <h6 class="fw-bold text-dark mb-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>위키 문법 가이드북</h6>
         <div class="row" style="font-size: 0.85rem; line-height: 1.6; color: #555;">
@@ -283,7 +273,6 @@
     </div>
   </div>
 
-  <!-- 파이어베이스 SDK 연동 핵심 로직 스크립트 -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import {
@@ -317,6 +306,9 @@
     const auth = getAuth(app);
     const database = getDatabase(app);
 
+    // [슈퍼 관리자 지정 계정 정의]
+    const ADMIN_EMAIL = "destiny3070k@gmail.com";
+
     // 인터페이스 포인터 제어 노드
     const authSection = document.getElementById('authSection');
     const credentialsForm = document.getElementById('credentialsForm');
@@ -335,7 +327,7 @@
     const searchInput = document.getElementById('searchInput');
 
     let currentUser = null;
-    let currentDoc = { title: '', content: '' };
+    let currentDoc = { title: '', content: '', authorUid: '' }; // 문서 소유권 식별용 authorUid 바인딩
     let footnotes = []; 
     let isSigningUp = false;
 
@@ -348,6 +340,14 @@
     window.submitWiki = submitWiki;
     window.deleteDoc = deleteDoc;
     window.showTooltip = showTooltip;
+
+    // 권한 검증 헬퍼 함수 (슈퍼 어드민이거나, 문서의 원작성자이거나, 새로 생성할 빈 문서일 경우 패스)
+    function checkPermission() {
+      if (!currentUser) return false;
+      if (currentUser.email === ADMIN_EMAIL) return true; 
+      if (!currentDoc.authorUid || currentDoc.authorUid === currentUser.uid) return true;
+      return false;
+    }
 
     function getCredentials() {
       const email = emailInput.value.trim();
@@ -394,7 +394,9 @@
           authSection.classList.add('hidden');
           wikiNav.classList.remove('hidden');
           mainSection.classList.remove('hidden');
-          userBadge.textContent = `👤 ${nick}님`;
+          
+          const badgeText = auth.currentUser.email === ADMIN_EMAIL ? `👑 ${nick}(관리자)` : `👤 ${nick}님`;
+          userBadge.textContent = badgeText;
           loadPage('메인페이지');
         } catch (err) {
           alert('닉네임 설정 중 오류가 발생했습니다.');
@@ -414,7 +416,7 @@
 
     logoutBtn.addEventListener('click', () => signOut(auth));
 
-    // 실시간 세션 라이프사이클 홀감시자
+    // 실시간 세션 라이프사이클 감시자
     onAuthStateChanged(auth, (user) => {
       if (user) {
         currentUser = user;
@@ -431,7 +433,9 @@
           authSection.classList.add('hidden');
           wikiNav.classList.remove('hidden');
           mainSection.classList.remove('hidden');
-          userBadge.textContent = `👤 ${user.displayName}님`;
+          
+          const badgeText = user.email === ADMIN_EMAIL ? `👑 ${user.displayName}(관리자)` : `👤 ${user.displayName}님`;
+          userBadge.textContent = badgeText;
           
           searchInput.onkeypress = (e) => { if (e.keyCode === 13) searchWiki(); };
           loadPage('메인페이지');
@@ -519,7 +523,8 @@
 
         if (snapshot.exists()) {
           const data = snapshot.val();
-          currentDoc = { title: data.title, content: data.content };
+          // 데이터 로드 시 작성자의 고유 UID(authorUid)도 데이터 객체에 함께 할당
+          currentDoc = { title: data.title, content: data.content, authorUid: data.authorUid || '' };
           const parsed = parseWiki(data.content);
           
           document.getElementById('displayTitle').innerText = data.title;
@@ -534,7 +539,8 @@
             document.getElementById('footnoteItems').innerHTML = parsed.fns.map(f => `<li>${f}</li>`).join('');
           }
         } else {
-          currentDoc = { title: title, content: '' };
+          // 문서가 존재하지 않는 신규 생성 단계일 때는 authorUid를 공백으로 비워 일반 유저 권한 부여를 허용함
+          currentDoc = { title: title, content: '', authorUid: '' };
           document.getElementById('displayTitle').innerText = title;
           document.getElementById('displayContent').innerHTML = "문서가 없습니다. 편집을 시작하세요.";
           document.getElementById('metaInfo').innerText = '';
@@ -547,11 +553,8 @@
     // 내부 공통 인라인 마크업 파서
     function parseInlineStyles(text) {
       let res = text;
-      // [해결 핵심] escapeHTML을 거치며 치환된 따옴표 형태(&#039;)를 기준으로 볼드체를 정상 식별하도록 수정
       res = res.replace(/&#039;&#039;&#039;(.*?)&#039;&#039;&#039;/g, '<strong>$1</strong>');
-      // 취소선
       res = res.replace(/~~(.*?)~~/g, '<del class="text-muted">$1</del>');
-      // 링크 처리
       res = res.replace(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (m, link, name) => {
         const d = name ? name.trim() : link.trim();
         const l = link.trim().replace(/&amp;/g, '&');
@@ -566,21 +569,18 @@
 
     function parseWiki(text) {
       if (!text) return { html: "", fns: [] };
-      let res = escapeHTML(text); // 여기서 문법 기호들이 일차 변환됩니다.
+      let res = escapeHTML(text); 
       let fns = [];
       let toc = [];
 
-      // 1. 주석 [* 내용] 추출 분리 작업 진행
       res = res.replace(/\[\* (.*?)\]/g, (m, p1) => {
         const stylizedFootnote = parseInlineStyles(p1);
         fns.push(stylizedFootnote);
         return `<sup class="footnote" onclick="showTooltip(event, ${fns.length - 1})">[${fns.length}]</sup>`;
       });
 
-      // 2. 주석 외 일반 본문 영역 스타일 파싱
       res = parseInlineStyles(res);
 
-      // 3. 섹션 구조 정규 표현식 처리
       res = res.replace(/^==\s*(.*?)\s*==$/gm, (m, p1) => {
         const id = "section_" + toc.length;
         toc.push({ id: id, title: p1 });
@@ -605,7 +605,13 @@
       t.style.top = (e.pageY - 30) + 'px';
     }
 
+    // 편집 모드 진입 제한 제어
     function openEditMode() {
+      // 권한 검증 실패 시 차단
+      if (!checkPermission()) {
+        alert("본인이 직접 생성하거나 서술한 문서만 편집할 수 있습니다.");
+        return;
+      }
       document.getElementById('viewMode').classList.add('hidden');
       document.getElementById('editMode').classList.remove('hidden');
       document.getElementById('editTitleLabel').innerText = currentDoc.title;
@@ -616,6 +622,13 @@
 
     async function submitWiki() {
       if (!currentUser) return;
+      
+      // 저장 액션 실행 전 한 번 더 화이트리스트 변조 검증 수행
+      if (!checkPermission()) {
+        alert("이 문서를 수정할 수 있는 권한이 상실되었습니다.");
+        return;
+      }
+
       const saveBtn = document.getElementById('saveBtn');
       saveBtn.disabled = true;
 
@@ -632,13 +645,23 @@
 
       try {
         const docRef = ref(database, `shared_wiki/${safeKey}`);
+        
+        // 데이터 구조 스키마 모델 설계에 authorUid 필드를 영구 할당하여 고유 식별자로 활용
+        // 만약 관리자가 다른 사람의 문서를 강제 교정할 경우, 원래 원작자의 소유권을 보호하기 위해 기존 원작자의 authorUid를 유지합니다.
+        const targetUid = (currentUser.email === ADMIN_EMAIL && currentDoc.authorUid) 
+                          ? currentDoc.authorUid 
+                          : currentUser.uid;
+
         await set(docRef, { 
           title: title, 
           content: newContent, 
           updatedAt: formattedDate,
-          author: currentUser.displayName || "익명 아카이버"
+          author: currentUser.displayName || "익명 아카이버",
+          authorUid: targetUid
         });
+        
         currentDoc.content = newContent;
+        currentDoc.authorUid = targetUid;
         saveBtn.disabled = false;
         loadPage(title);
       } catch (err) {
@@ -647,9 +670,17 @@
       }
     }
 
+    // 문서 삭제 모드 제한 제어
     async function deleteDoc() {
       if (!currentUser || !currentDoc.title || currentDoc.title === '메인페이지') return;
-      if (confirm("삭제할까요?")) {
+      
+      // 권한 검증 실패 시 차단
+      if (!checkPermission()) {
+        alert("본인이 직접 생성하거나 서술한 문서만 삭제할 수 있습니다.");
+        return;
+      }
+
+      if (confirm("정말로 이 문서를 삭제하시겠습니까?")) {
         const safeKey = btoa(encodeURIComponent(currentDoc.title)).replace(/=/g, '');
         try {
           await remove(ref(database, `shared_wiki/${safeKey}`));
