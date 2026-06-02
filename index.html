@@ -14,7 +14,7 @@
       margin: 0;
     }
     
-    /* 상단 네비게이션 바 */
+    /* 상단 네비게이션 바 (PC 기준 기본 셋업) */
     .navbar { 
       background-color: #2c3e50; 
       border-bottom: 3px solid #3498db; 
@@ -26,13 +26,16 @@
       cursor: pointer; 
     }
     
-    /* 네비게이션 내부 요소 래퍼 (모바일 대응용 flex 셋업) */
+    /* 네비게이션 내부 요소 우측 정렬 제어 클래스 (PC) */
     .nav-controls {
       display: flex;
       align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-      width: 100%;
+      justify-content: flex-end;
+      gap: 10px;
+      width: auto;
+    }
+    .logout-wrapper {
+      display: inline-block;
     }
     
     /* 인증 통합 컨테이너 */
@@ -94,13 +97,13 @@
       line-height: 1.6;
     }
 
-    /* 위키 레이아웃 기본 (PC 기준) */
+    /* ================= 💻 PC 데스크톱 기준 기본 레이아웃 스타일 ================= */
     .wiki-container { 
       background-color: #ffffff;
       border: 1px solid #dee2e6;
       padding: 45px; 
-      margin-top: 40px; 
-      margin-bottom: 50px;
+      margin: 40px auto 50px auto; /* 상하 여백을 주되, 좌우를 auto로 두어 무조건 정중앙 정렬 */
+      max-width: 1050px; /* PC화면에서 너무 광활하게 퍼지지 않도록 가로 상한선 조절 */
       min-height: 650px; 
       border-radius: 12px; 
       box-shadow: 0 4px 12px rgba(0,0,0,0.04); 
@@ -196,7 +199,7 @@
       display: none !important; 
     }
 
-    /* ================= 📱 스마트폰 모바일 디바이스 전용 최적화 미디어 쿼리 ================= */
+    /* ================= 📱 태블릿 및 스마트폰 모바일 디바이스 구간 전용 스타일 ================= */
     @media (max-width: 991.98px) {
       .navbar .container {
         flex-direction: column;
@@ -205,16 +208,16 @@
       }
       .nav-controls {
         display: grid;
-        grid-template-columns: 1fr auto auto; /* 검색창이 남은 여백을 꽉 채우고 버튼 배치 */
+        grid-template-columns: 1fr auto auto; /* 모바일 전용 레이아웃 분할 구조 유지 */
         width: 100%;
         gap: 6px;
       }
       #searchInput {
-        max-width: 100% !important; /* 모바일에서 고정폭 해제 */
+        max-width: 100% !important; 
         width: 100%;
       }
       #userBadge {
-        grid-column: 1 / -1; /* 유저 정보 배지는 가장 상단에 한 줄 전체 차지 */
+        grid-column: 1 / -1; 
         margin-bottom: 4px;
         color: #fff !important;
       }
@@ -224,11 +227,11 @@
         margin-top: 2px;
       }
       
-      /* 본문 컨테이너 모바일 여백 축소 */
+      /* 본문 컨테이너 모바일 최적화 (좌우 마진 해제 및 풀 패딩 확보) */
       .wiki-container {
         padding: 20px;
-        margin-top: 15px;
-        margin-bottom: 25px;
+        margin: 15px 12px 25px 12px; /* 모바일에서는 양옆에 살짝 여백만 두고 꽉 차게 변경 */
+        max-width: 100%;
         border-radius: 8px;
       }
       .wiki-title {
@@ -361,10 +364,8 @@
     const auth = getAuth(app);
     const database = getDatabase(app);
 
-    // 슈퍼 관리자 지정 계정 정의
     const ADMIN_EMAIL = "destiny3070k@gmail.com";
 
-    // 인터페이스 포인터 제어 노드
     const authSection = document.getElementById('authSection');
     const credentialsForm = document.getElementById('credentialsForm');
     const nicknameForm = document.getElementById('nicknameForm');
@@ -386,7 +387,6 @@
     let footnotes = []; 
     let isSigningUp = false;
 
-    // 전역 스코프 바인딩 처리
     window.loadPage = loadPage;
     window.searchWiki = searchWiki;
     window.createNewWiki = createNewWiki;
@@ -396,7 +396,6 @@
     window.deleteDoc = deleteDoc;
     window.showTooltip = showTooltip;
 
-    // 권한 검증 헬퍼 함수
     function checkPermission() {
       if (!currentUser) return false;
       if (currentUser.email === ADMIN_EMAIL) return true; 
@@ -418,7 +417,6 @@
       return { email, password };
     }
 
-    // 회원가입 단추 액션
     signupBtn.addEventListener('click', async () => {
       const creds = getCredentials();
       if (!creds) return;
@@ -433,7 +431,6 @@
       }
     });
 
-    // 닉네임 영구 저장 단추 액션
     saveNicknameBtn.addEventListener('click', async () => {
       const nick = nicknameInput.value.trim();
       if (!nick || nick.length < 2) {
@@ -459,7 +456,6 @@
       }
     });
 
-    // 일반 로그인 처리 단추 액션
     loginBtn.addEventListener('click', async () => {
       const creds = getCredentials();
       if (!creds) return;
@@ -471,7 +467,6 @@
 
     logoutBtn.addEventListener('click', () => signOut(auth));
 
-    // 실시간 세션 라이프사이클 감시자
     onAuthStateChanged(auth, (user) => {
       if (user) {
         currentUser = user;
@@ -511,7 +506,6 @@
       }
     });
 
-    // 위키 비즈니스 데이터 로더
     async function loadPage(title) {
       if (!currentUser || !title) return;
       
