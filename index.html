@@ -120,6 +120,17 @@
       line-height: 1.9; 
       font-size: 1.05rem; 
     }
+    
+    /* 🖼️ 파싱된 이미지 스타일 정의 (반응형 기본 적용) */
+    .wiki-content img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 12px 0;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
     .recent-list { 
       list-style: none; 
       padding-left: 0; 
@@ -321,7 +332,9 @@
           <div class="col-6 col-sm-3"><strong>주석 달기:</strong> <code>[* 설명 내용]</code></div>
           <div class="col-6 col-sm-3"><strong>내부 링크:</strong> <code>[[문서이름]]</code></div>
           <div class="col-6 col-sm-3"><strong>외부 링크:</strong> <code>[[주소|표시명]]</code></div>
-          <div class="col-12 text-muted"><span class="text-primary">*</span> 주석 내부에 볼드, 취소선, 링크를 중첩하여 작성할 수 있습니다.</div>
+          <div class="col-12 border-top pt-2 mt-2">
+            <strong>🏞️ 이미지 삽입:</strong> <code>[[파일:이미지주소]]</code> 또는 크기 지정 <code>[[파일:주소|width=300]]</code> / <code>[[파일:주소|width=70%]]</code>
+          </div>
         </div>
       </div>
 
@@ -601,6 +614,23 @@
 
     function parseInlineStyles(text) {
       let res = text;
+      
+      // 🖼️ 파일/이미지 파싱 로직 추가 (`[[파일:주소]]` 혹은 `[[파일:주소|width=300]]`)
+      res = res.replace(/\[\[파일:([^|\]]+)(?:\|([^\]]+))?\]\]/g, (m, imgUrl, attr) => {
+        const cleanUrl = imgUrl.trim().replace(/&amp;/g, '&');
+        let sizeStyle = "";
+        
+        if (attr) {
+          const match = attr.match(/width=([0-9a-zA-Z%]+)/);
+          if (match) {
+            const widthVal = match[1];
+            // 숫자로만 되어 있으면 px를 붙여주고, % 등이 붙어 있으면 그대로 사용
+            sizeStyle = /^\d+$/.test(widthVal) ? `width: ${widthVal}px;` : `width: ${widthVal};`;
+          }
+        }
+        return `<img src="${cleanUrl}" style="${sizeStyle}" alt="위키 이미지" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'40\'><text x=\'10\' y=\'25\' fill=\'red\'>⚠️ 이미지 로드 실패</text></svg>';">`;
+      });
+
       res = res.replace(/&#039;&#039;&#039;(.*?)&#039;&#039;&#039;/g, '<strong>$1</strong>');
       res = res.replace(/~~(.*?)~~/g, '<del class="text-muted">$1</del>');
       res = res.replace(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (m, link, name) => {
@@ -664,7 +694,6 @@
       const titleInput = document.getElementById('editorTitleInput');
       titleInput.value = currentDoc.title;
       
-      // 메인페이지 제목은 수정 불가능하게 락인(Lock) 처리
       if (currentDoc.title === '메인페이지') {
         titleInput.readOnly = true;
         titleInput.style.backgroundColor = '#e9ecef';
@@ -718,7 +747,6 @@
                           ? currentDoc.authorUid 
                           : currentUser.uid;
 
-        // 1. 새로운 경로(새 제목 Key)에 위키 데이터 세팅
         await set(newDocRef, { 
           title: newTitle, 
           content: newContent, 
@@ -727,7 +755,6 @@
           authorUid: targetUid
         });
 
-        // 2. 제목이 바뀐 경우라면, 구 데이터 파이어베이스 찌꺼기 원격 제거
         if (oldTitle !== newTitle && oldTitle !== '') {
           const oldDocRef = ref(database, `shared_wiki/${oldSafeKey}`);
           await remove(oldDocRef);
@@ -738,7 +765,7 @@
         currentDoc.authorUid = targetUid;
         
         saveBtn.disabled = false;
-        loadPage(newTitle); // 새로 바뀐 제목 페이지로 이동
+        loadPage(newTitle); 
       } catch (err) {
         alert('저장 및 제목 변경 처리가 실패했습니다.');
         saveBtn.disabled = false;
