@@ -120,6 +120,17 @@
       line-height: 1.9; 
       font-size: 1.05rem; 
     }
+    
+    /* 파싱된 이미지 스타일 정의 */
+    .wiki-content img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 12px 0;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
     .recent-list { 
       list-style: none; 
       padding-left: 0; 
@@ -321,7 +332,15 @@
           <div class="col-6 col-sm-3"><strong>주석 달기:</strong> <code>[* 설명 내용]</code></div>
           <div class="col-6 col-sm-3"><strong>내부 링크:</strong> <code>[[문서이름]]</code></div>
           <div class="col-6 col-sm-3"><strong>외부 링크:</strong> <code>[[주소|표시명]]</code></div>
-          <div class="col-12 text-muted"><span class="text-primary">*</span> 주석 내부에 볼드, 취소선, 링크를 중첩하여 작성할 수 있습니다.</div>
+          <div class="col-12 col-sm-6"><strong>🏞️ 이미지 삽입 (직접):</strong> <code>[[파일:이미지주소]]</code></div>
+          
+          <div class="col-12 border-top pt-2 mt-2 bg-light p-2 rounded" style="font-size: 0.82rem; line-height: 1.5;">
+            <span class="badge bg-success mb-1">🔗 공유 드라이브 사진 연동 (보안 우회형)</span><br>
+            위키 화면에 사진이 엑스박스로 깨져 보일 때는 <b>새 창 열기 링크 문법</b>을 사용하는 것이 가장 확실합니다.<br>
+            1. <a href="https://drive.google.com/drive/folders/1DEg-LLa4cR4yoazwswW0NwaL2mfih9d5?usp=sharing" target="_blank" class="fw-bold text-decoration-none text-primary">【위키 전용 공유 드라이브 아지트】</a>에 사진을 올립니다.<br>
+            2. 파일 우클릭 후 <b>[공유] ➡️ [링크 복사]</b>를 눌러 주소를 그대로 가져옵니다.<br>
+            3. 본문에 <code>[[복사한_드라이브_주소|👉 여기에 사진 이름 적기]]</code> 형태로 적어주시면 클릭 시 원본이 깔끔하게 열립니다!
+          </div>
         </div>
       </div>
 
@@ -601,6 +620,22 @@
 
     function parseInlineStyles(text) {
       let res = text;
+      
+      // 파일/이미지 파싱 로직 (`[[파일:주소]]` 혹은 `[[파일:주소|width=300]]`)
+      res = res.replace(/\[\[파일:([^|\]]+)(?:\|([^\]]+))?\]\]/g, (m, imgUrl, attr) => {
+        const cleanUrl = imgUrl.trim().replace(/&amp;/g, '&');
+        let sizeStyle = "";
+        
+        if (attr) {
+          const match = attr.match(/width=([0-9a-zA-Z%]+)/);
+          if (match) {
+            const widthVal = match[1];
+            sizeStyle = /^\d+$/.test(widthVal) ? `width: ${widthVal}px;` : `width: ${widthVal};`;
+          }
+        }
+        return `<img src="${cleanUrl}" style="${sizeStyle}" alt="위키 이미지" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'40\'><text x=\'10\' y=\'25\' fill=\'red\'>⚠️ 이미지 로드 실패</text></svg>';">`;
+      });
+
       res = res.replace(/&#039;&#039;&#039;(.*?)&#039;&#039;&#039;/g, '<strong>$1</strong>');
       res = res.replace(/~~(.*?)~~/g, '<del class="text-muted">$1</del>');
       res = res.replace(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (m, link, name) => {
@@ -664,7 +699,6 @@
       const titleInput = document.getElementById('editorTitleInput');
       titleInput.value = currentDoc.title;
       
-      // 메인페이지 제목은 수정 불가능하게 락인(Lock) 처리
       if (currentDoc.title === '메인페이지') {
         titleInput.readOnly = true;
         titleInput.style.backgroundColor = '#e9ecef';
@@ -708,7 +742,7 @@
       const now = new Date();
       const formattedDate = now.getFullYear() + '-' + 
         String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-        String(now.getDate()).padStart(2, '0') + ' ' + 
+        String(now.getDate()).padStart(2, '0'Prefix) + ' ' + 
         String(now.getHours()).padStart(2, '0') + ':' + 
         String(now.getMinutes()).padStart(2, '0');
 
@@ -718,7 +752,6 @@
                           ? currentDoc.authorUid 
                           : currentUser.uid;
 
-        // 1. 새로운 경로(새 제목 Key)에 위키 데이터 세팅
         await set(newDocRef, { 
           title: newTitle, 
           content: newContent, 
@@ -727,7 +760,6 @@
           authorUid: targetUid
         });
 
-        // 2. 제목이 바뀐 경우라면, 구 데이터 파이어베이스 찌꺼기 원격 제거
         if (oldTitle !== newTitle && oldTitle !== '') {
           const oldDocRef = ref(database, `shared_wiki/${oldSafeKey}`);
           await remove(oldDocRef);
@@ -738,7 +770,7 @@
         currentDoc.authorUid = targetUid;
         
         saveBtn.disabled = false;
-        loadPage(newTitle); // 새로 바뀐 제목 페이지로 이동
+        loadPage(newTitle); 
       } catch (err) {
         alert('저장 및 제목 변경 처리가 실패했습니다.');
         saveBtn.disabled = false;
