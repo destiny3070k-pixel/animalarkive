@@ -120,17 +120,6 @@
       line-height: 1.9; 
       font-size: 1.05rem; 
     }
-    
-    /* 파싱된 이미지 스타일 정의 */
-    .wiki-content img {
-      max-width: 100%;
-      height: auto;
-      display: block;
-      margin: 12px 0;
-      border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-
     .recent-list { 
       list-style: none; 
       padding-left: 0; 
@@ -332,15 +321,7 @@
           <div class="col-6 col-sm-3"><strong>주석 달기:</strong> <code>[* 설명 내용]</code></div>
           <div class="col-6 col-sm-3"><strong>내부 링크:</strong> <code>[[문서이름]]</code></div>
           <div class="col-6 col-sm-3"><strong>외부 링크:</strong> <code>[[주소|표시명]]</code></div>
-          <div class="col-12 col-sm-6"><strong>🏞️ 이미지 기본:</strong> <code>[[파일:이미지주소]]</code></div>
-          <div class="col-12 col-sm-6"><strong>📏 이미지 크기조절:</strong> <code>[[파일:주소|width=300]]</code> / <code>[[파일:주소|width=50%]]</code></div>
-          
-          <div class="col-12 border-top pt-2 mt-2 bg-light p-2 rounded" style="font-size: 0.82rem; line-height: 1.5;">
-            <span class="badge bg-primary mb-1">📸 공유 드라이브 사진 연동 안내</span><br>
-            1. <a href="https://drive.google.com/drive/folders/1DEg-LLa4cR4yoazwswW0NwaL2mfih9d5?usp=sharing" target="_blank" class="fw-bold text-decoration-none text-success">【위키 전용 공유 드라이브 아지트】</a>에 사진을 업로드합니다.<br>
-            2. 올린 파일의 우클릭 링크를 복사하여 고유 아이디 값(<code>d/</code>와 <code>/view</code> 사이의 문자열)을 추출합니다.<br>
-            3. 본문에 <code>[[파일:https://drive.google.com/thumbnail?id=아이디값&sz=w1920]]</code> 형태로 적어주시면 에러 없이 사진이 깨끗하게 출력됩니다!
-          </div>
+          <div class="col-12 text-muted"><span class="text-primary">*</span> 주석 내부에 볼드, 취소선, 링크를 중첩하여 작성할 수 있습니다.</div>
         </div>
       </div>
 
@@ -620,22 +601,6 @@
 
     function parseInlineStyles(text) {
       let res = text;
-      
-      // 파일/이미지 파싱 로직 (`[[파일:주소]]` 혹은 `[[파일:주소|width=300]]`)
-      res = res.replace(/\[\[파일:([^|\]]+)(?:\|([^\]]+))?\]\]/g, (m, imgUrl, attr) => {
-        const cleanUrl = imgUrl.trim().replace(/&amp;/g, '&');
-        let sizeStyle = "";
-        
-        if (attr) {
-          const match = attr.match(/width=([0-9a-zA-Z%]+)/);
-          if (match) {
-            const widthVal = match[1];
-            sizeStyle = /^\d+$/.test(widthVal) ? `width: ${widthVal}px;` : `width: ${widthVal};`;
-          }
-        }
-        return `<img src="${cleanUrl}" style="${sizeStyle}" alt="위키 이미지" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'40\'><text x=\'10\' y=\'25\' fill=\'red\'>⚠️ 이미지 로드 실패</text></svg>';">`;
-      });
-
       res = res.replace(/&#039;&#039;&#039;(.*?)&#039;&#039;&#039;/g, '<strong>$1</strong>');
       res = res.replace(/~~(.*?)~~/g, '<del class="text-muted">$1</del>');
       res = res.replace(/\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g, (m, link, name) => {
@@ -699,6 +664,7 @@
       const titleInput = document.getElementById('editorTitleInput');
       titleInput.value = currentDoc.title;
       
+      // 메인페이지 제목은 수정 불가능하게 락인(Lock) 처리
       if (currentDoc.title === '메인페이지') {
         titleInput.readOnly = true;
         titleInput.style.backgroundColor = '#e9ecef';
@@ -752,6 +718,7 @@
                           ? currentDoc.authorUid 
                           : currentUser.uid;
 
+        // 1. 새로운 경로(새 제목 Key)에 위키 데이터 세팅
         await set(newDocRef, { 
           title: newTitle, 
           content: newContent, 
@@ -760,6 +727,7 @@
           authorUid: targetUid
         });
 
+        // 2. 제목이 바뀐 경우라면, 구 데이터 파이어베이스 찌꺼기 원격 제거
         if (oldTitle !== newTitle && oldTitle !== '') {
           const oldDocRef = ref(database, `shared_wiki/${oldSafeKey}`);
           await remove(oldDocRef);
@@ -770,7 +738,7 @@
         currentDoc.authorUid = targetUid;
         
         saveBtn.disabled = false;
-        loadPage(newTitle); 
+        loadPage(newTitle); // 새로 바뀐 제목 페이지로 이동
       } catch (err) {
         alert('저장 및 제목 변경 처리가 실패했습니다.');
         saveBtn.disabled = false;
