@@ -330,17 +330,17 @@
           <div class="col-6 col-sm-3"><strong>텍스트:</strong> <code>'''볼드체'''</code></div>
           <div class="col-6 col-sm-3"><strong>효과:</strong> <code>~~취소선~~</code></div>
           <div class="col-6 col-sm-3"><strong>문단 분리:</strong> <code>== 문단제목 ==</code></div>
-          <div class="col-6 col-sm-3"><strong>주석 달기:</strong> <code>[* 설명 내용]</code></div>
-          <div class="col-6 col-sm-3"><strong>내부 링크:</strong> <code>[[문서이름]]</code></div>
-          <div class="col-6 col-sm-3"><strong>외부 링크:</strong> <code>[[주소|표시명]]</code></div>
-          <div class="col-12 col-sm-6"><strong>🏞️ 이미지 삽입 (직접):</strong> <code>[[파일:이미지주소]]</code></div>
+          <div class="col-6 col-sm-3"><strong>주석 달기:</strong> <code>\[\* 설명 내용\]</code></div>
+          <div class="col-6 col-sm-3"><strong>내부 링크:</strong> <code>\[\[문서이름\]\]</code></div>
+          <div class="col-6 col-sm-3"><strong>외부 링크:</strong> <code>\[\[주소|표시명\]\]</code></div>
+          <div class="col-12 col-sm-6"><strong>🏞️ 이미지 삽입 (직접):</strong> <code>\[\[파일:이미지주소\]\]</code></div>
           
           <div class="col-12 border-top pt-2 mt-2 bg-light p-2 rounded" style="font-size: 0.82rem; line-height: 1.5;">
             <span class="badge bg-success mb-1">🔗 공유 드라이브 사진 연동 (보안 우회형)</span><br>
             위키 화면에 사진이 엑스박스로 깨져 보일 때는 <b>새 창 열기 링크 문법</b>을 사용하는 것이 가장 확실합니다.<br>
             1. <a href="https://drive.google.com/drive/folders/1DEg-LLa4cR4yoazwswW0NwaL2mfih9d5?usp=sharing" target="_blank" class="fw-bold text-decoration-none text-primary">【위키 전용 공유 드라이브 아지트】</a>에 사진을 올립니다.<br>
             2. 파일 우클릭 후 <b>[공유] ➡️ [링크 복사]</b>를 눌러 주소를 그대로 가져옵니다.<br>
-            3. 본문에 <code>[[복사한_드라이브_주소|👉 여기에 사진 이름 적기]]</code> 형태로 적어주시면 클릭 시 원본이 깔끔하게 열립니다!
+            3. 본문에 <code>\[\[복사한_드라이브_주소|👉 여기에 사진 이름 적기\]\]</code> 형태로 적어주시면 클릭 시 원본이 깔끔하게 열립니다!
           </div>
         </div>
       </div>
@@ -462,16 +462,15 @@
       if (auth.currentUser) {
         try {
           await updateProfile(auth.currentUser, { displayName: nick });
+          
+          // 실시간 데이터베이스의 사용자 노드에도 저장(백업용)
+          const userSafeKey = btoa(encodeURIComponent(auth.currentUser.uid)).replace(/=/g, '');
+          await set(ref(database, `users/${userSafeKey}`), { displayName: nick });
+
           alert(`${nick}님, Animal Arkive에 오신 것을 환영합니다!`);
           
           isSigningUp = false;
-          authSection.classList.add('hidden');
-          wikiNav.classList.remove('hidden');
-          mainSection.classList.remove('hidden');
-          
-          const badgeText = auth.currentUser.email === ADMIN_EMAIL ? `👑 ${nick}(관리자)` : `👤 ${nick}님`;
-          userBadge.textContent = badgeText;
-          loadPage('메인페이지');
+          showMainUI(auth.currentUser, nick);
         } catch (err) {
           alert('닉네임 설정 중 오류가 발생했습니다.');
         }
@@ -489,9 +488,24 @@
 
     logoutBtn.addEventListener('click', () => signOut(auth));
 
-    onAuthStateChanged(auth, (user) => {
+    // 메인화면 UI로 전환하는 공통 함수
+    function showMainUI(user, displayName) {
+      authSection.classList.add('hidden');
+      wikiNav.classList.remove('hidden');
+      mainSection.classList.remove('hidden');
+      
+      const badgeText = user.email === ADMIN_EMAIL ? `👑 ${displayName}(관리자)` : `👤 ${displayName}님`;
+      userBadge.textContent = badgeText;
+      
+      searchInput.onkeypress = (e) => { if (e.keyCode === 13) searchWiki(); };
+      loadPage('메인페이지');
+    }
+
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
         currentUser = user;
+        
+        // 회원가입 진행 중일 경우 프로세스 유지
         if (isSigningUp && !user.displayName) {
           authSection.classList.remove('hidden');
           credentialsForm.classList.add('hidden');
@@ -501,18 +515,29 @@
           return;
         }
 
+        // 1. 유저 객체 자체에 프로필명이 등록되어 있다면 바로 진입
         if (user.displayName) {
-          authSection.classList.add('hidden');
-          wikiNav.classList.remove('hidden');
-          mainSection.classList.remove('hidden');
-          
-          const badgeText = user.email === ADMIN_EMAIL ? `👑 ${user.displayName}(관리자)` : `👤 ${user.displayName}님`;
-          userBadge.textContent = badgeText;
-          
-          searchInput.onkeypress = (e) => { if (e.keyCode === 13) searchWiki(); };
-          loadPage('메인페이지');
+          showMainUI(user, user.displayName);
         } else {
-          signOut(auth);
+          // 2. 인증 객체엔 없지만, 리얼타임 DB 유저 노드에 백업되어 있는지 체크
+          const userSafeKey = btoa(encodeURIComponent(user.uid)).replace(/=/g, '');
+          try {
+            const userSnap = await get(ref(database, `users/${userSafeKey}`));
+            if (userSnap.exists() && userSnap.val().displayName) {
+              const dbNick = userSnap.val().displayName;
+              await updateProfile(user, { displayName: dbNick }); // 프로필 동기화 복구
+              showMainUI(user, dbNick);
+            } else {
+              // 3. 어디에도 이름이 전혀 없는 유저의 경우 강제 로그아웃 대신, 닉네임 생성 폼으로 강제 연결 우회 처리
+              authSection.classList.remove('hidden');
+              credentialsForm.classList.add('hidden');
+              nicknameForm.classList.remove('hidden');
+              wikiNav.classList.add('hidden');
+              mainSection.classList.add('hidden');
+            }
+          } catch(e) {
+            signOut(auth);
+          }
         }
       } else {
         currentUser = null;
@@ -635,7 +660,6 @@
     function parseInlineStyles(text) {
       let res = text;
       
-      // 파일/이미지 파싱 로직 (`[[파일:주소]]` 혹은 `[[파일:주소|width=300]]`)
       res = res.replace(/\[\[파일:([^|\]]+)(?:\|([^\]]+))?\]\]/g, (m, imgUrl, attr) => {
         const cleanUrl = imgUrl.trim().replace(/&amp;/g, '&');
         let sizeStyle = "";
