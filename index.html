@@ -343,9 +343,16 @@
           <div class="col-6 col-sm-3"><strong>주석 달기:</strong> <code>\[\* 설명 내용\]</code></div>
           <div class="col-6 col-sm-3"><strong>내부 링크:</strong> <code>\[\[문서이름\]\]</code></div>
           <div class="col-6 col-sm-3"><strong>외부 링크:</strong> <code>\[\[주소|표시명\]\]</code></div>
-          <div class="col-12 col-sm-6"><strong>🏞️ 이미지 삽입 (직접):</strong> <code>\[\[파일:이미지주소\]\]</code></div>
+          <div class="col-6 col-sm-3"><strong>🎨 글자 색상:</strong> <code>\[#코드 내용]</code></div>
+          <div class="col-6 col-sm-3"><strong>🏞️ 이미지 삽입:</strong> <code>\[\[파일:주소\]\]</code></div>
           
-          <div class="col-12 border-top pt-2 mt-2 bg-light p-2 rounded" style="font-size: 0.82rem; line-height: 1.5;">
+          <div class="col-12 bg-light p-2 rounded mt-2" style="font-size: 0.82rem; line-height: 1.5; border-left: 3px solid #3498db;">
+            <strong>🌈 글자 색상 변경 가이드:</strong> <code>\[#색상코드 혹은 색상명 한 칸 띄우고 적을 내용]</code> 형태로 사용합니다.<br>
+            - 예시 1 (HEX 코드): <code>\[#13def9 민트색 글자]</code> ➡️ <span style="color:#13def9; font-weight:bold;">민트색 글자</span> 로 렌더링<br>
+            - 예시 2 (기본 색상명): <code>\[#red 빨간 글자]</code> ➡️ <span style="color:red; font-weight:bold;">빨간 글자</span> 로 렌더링
+          </div>
+          
+          <div class="col-12 border-top pt-2 mt-2" style="font-size: 0.82rem; line-height: 1.5;">
             <span class="badge bg-success mb-1">🔗 공유 드라이브 사진 연동 (보안 우회형)</span><br>
             위키 화면에 사진이 엑스박스로 깨져 보일 때는 <b>새 창 열기 링크 문법</b>을 사용하는 것이 가장 확실합니다.<br>
             1. <a href="https://drive.google.com/drive/folders/1DEg-LLa4cR4yoazwswW0NwaL2mfih9d5?usp=sharing" target="_blank" class="fw-bold text-decoration-none text-primary">【위키 전용 공유 드라이브 아지트】</a>에 사진을 올립니다.<br>
@@ -396,7 +403,6 @@
     const auth = getAuth(app);
     const database = getDatabase(app);
 
-    // 👑 추가를 정중히 요청하신 wonrini0828@gmail.com 계정을 다중 마스터 권한 목록에 바인딩
     const ADMIN_EMAILS = ["leehs080307@gmail.com", "wonrini0828@gmail.com"];
 
     const authSection = document.getElementById('authSection');
@@ -600,7 +606,7 @@
                   볼드: <code>'''글자'''</code> / 취소선: <code>~~글자~~</code><br>
                   섹션: <code>== 제목 ==</code><br>
                   내부링크: <code>[[문서명]]</code> / 외부: <code>[[URL|이름]]</code><br>
-                  주석: <code>[* 내용]</code>
+                  주석: <code>[* 내용]</code> / 컬러: <code>[#코드 내용]</code>
                 </div>
               </div>
             </div>`;
@@ -649,6 +655,7 @@
     function parseInlineStyles(text) {
       let res = text;
       
+      // 1. 파일 문법 파싱
       res = res.replace(/\[\[파일:([^|\]]+)(?:\|([^\]]+))?\]\]/g, (m, imgUrl, attr) => {
         const cleanUrl = imgUrl.trim().replace(/&amp;/g, '&');
         let sizeStyle = "";
@@ -661,6 +668,17 @@
           }
         }
         return `<img src="${cleanUrl}" style="${sizeStyle}" alt="위키 이미지" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'40\'><text x=\'10\' y=\'25\' fill=\'red\'>⚠️ 이미지 로드 실패</text></svg>';">`;
+      });
+
+      // 🎨 2. [#색상코드 내용] 또는 [#색상명 내용] 문법 변환 추가 정의
+      // 이스케이프된 문자열 상태(&#039; 나 공백 등)를 유연하게 탐지하기 위해 스페이스(\s)를 기준으로 분할 파싱합니다.
+      res = res.replace(/\[#([A-Za-z0-9#]+)\s+([^\]]+)\]/g, (m, colorCode, content) => {
+        // 혹시 앞에 #이 안 붙어온 6자리 Hex 코드의 경우 CSS 안정성을 위해 #을 붙여줍니다.
+        let targetColor = colorCode.trim();
+        if (/^[0-9A-Fa-f]{6}$/.test(targetColor)) {
+          targetColor = '#' + targetColor;
+        }
+        return `<span style="color: ${targetColor}; font-weight: 500;">${content}</span>`;
       });
 
       res = res.replace(/&#039;&#039;&#039;(.*?)&#039;&#039;&#039;/g, '<strong>$1</strong>');
@@ -706,14 +724,12 @@
       return { html: res.replace(/\n/g, '<br>'), fns: fns };
     }
 
-    // 🛠️ 대대적인 모바일 터치 대응 및 좌표값 보정 알고리즘 패치
     function showTooltip(e, i) {
       e.stopPropagation();
       const t = document.getElementById('fnTooltip');
       t.innerHTML = footnotes[i]; 
       t.style.display = 'block';
       
-      // 모바일 기기 창 크기를 계산하여 팝업이 오른쪽 끝을 뚫고 지나치지 않도록 조정
       const popupWidth = 280;
       let leftPos = e.pageX + 10;
       if (leftPos + popupWidth > window.innerWidth) {
